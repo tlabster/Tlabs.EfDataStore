@@ -6,6 +6,11 @@
     <OutputType>Library</OutputType>
     <RuntimeFrameworkVersion>2.1.0</RuntimeFrameworkVersion>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+
+    <Authors>Tlabs</Authors>
+    <PackageLicenseUrl>https://bitbucket.org/tlabster/tlabs.efdatastore/src/master/LICENSE</PackageLicenseUrl>
+    <PackageProjectUrl>https://bitbucket.org/tlabster/tlabs.efdatastore</PackageProjectUrl>
+
   </PropertyGroup>
 
   <ItemGroup>
