@@ -21,9 +21,7 @@ namespace Tlabs.Data.Store {
 
       services.AddSingleton<T>();
 
-      services.AddDbContext<DStoreContext<T>>(opt => {
-        if (!opt.IsConfigured) throw new InvalidOperationException("OptionBuilder must be already configured in service provider...");
-      }, ServiceLifetime.Scoped, ServiceLifetime.Singleton);
+      services.AddDbContext<DStoreContext<T>>();
       log.LogDebug("{ctx} added to service colletion.", nameof(DStoreContext<T>));
 
       services.AddScoped<IDataStore, EfDataStore<DStoreContext<T>>>();
