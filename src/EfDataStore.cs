@@ -40,6 +40,9 @@ namespace Tlabs.Data.Store {
     }
 
     ///<inherit/>
+    public IDataTransaction StartTransaction() => new EfDataTransaction<T>(this, ctx.Database);
+
+    ///<inherit/>
     public void EnsureStore(IEnumerable<IDataSeed> seeds) {
       ctx.Database.Migrate();
       //ctx.Database.EnsureCreated();
