@@ -36,8 +36,8 @@ namespace Tlabs.Data.Store {
     public void ResetChanges() => efStore.ResetChanges();
 
     ///<inherit/>
-    public IDataTransaction StartTransaction() => efStore.StartTransaction();
-
+    public void WithTransaction(Action<IDataTransaction> operation) => efStore.WithTransaction(operation);
+    
     ///<inherit/>
     public void EnsureStore(IEnumerable<IDataSeed> seeds) => efStore.EnsureStore(seeds);
 

@@ -40,7 +40,14 @@ namespace Tlabs.Data.Store {
     }
 
     ///<inherit/>
-    public IDataTransaction StartTransaction() => new EfDataTransaction<T>(this, ctx.Database);
+    public void WithTransaction(Action<IDataTransaction> operation) {
+      var strategy= ctx.Database.CreateExecutionStrategy();
+      strategy.Execute(() => {
+        using (var tx= new EfDataTransaction<T>(this, ctx.Database)) {
+          operation(tx);
+        }
+      });
+    }
 
     ///<inherit/>
     public void EnsureStore(IEnumerable<IDataSeed> seeds) {
