@@ -4,7 +4,7 @@
     <VersionPrefix>1.0.5</VersionPrefix>
     <TargetFramework>netcoreapp2.1</TargetFramework>
     <OutputType>Library</OutputType>
-    <RuntimeFrameworkVersion>2.1.0</RuntimeFrameworkVersion>
+    <RuntimeFrameworkVersion>2.1.1</RuntimeFrameworkVersion>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
 
     <Description>A concrete implementation of a `Tlabs.Data.IDataStore` based on EF Core.</Description>

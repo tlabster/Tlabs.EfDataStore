@@ -54,29 +54,29 @@ namespace Tlabs.Data.Store {
     public System.Linq.IQueryable<TEntity> UntrackedQuery<TEntity>() where TEntity : class => efStore.UntrackedQuery<TEntity>();
 
     ///<inherit/>
-    public void Insert<TEntity>(TEntity entity) where TEntity : class => efStore.Insert<TEntity>(entity);
+    public TEntity Insert<TEntity>(TEntity entity) where TEntity : class => efStore.Insert<TEntity>(entity);
 
     ///<inherit/>
     public TEntity Merge<TEntity>(TEntity entity) where TEntity : class, new() => efStore.Merge<TEntity>(entity);
 
     ///<inherit/>
-    public void Update<TEntity>(TEntity entity) where TEntity : class => efStore.Update<TEntity>(entity);
+    public TEntity Update<TEntity>(TEntity entity) where TEntity : class => efStore.Update<TEntity>(entity);
 
     ///<inherit/>
     public void Delete<TEntity>(TEntity entity) where TEntity : class => efStore.Delete<TEntity>(entity);
 
     ///<inherit/>
-    public void Attach<TEntity>(TEntity entity) where TEntity : class => efStore.Attach<TEntity>(entity);
+    public TEntity Attach<TEntity>(TEntity entity) where TEntity : class => efStore.Attach<TEntity>(entity);
 
     ///<inherit/>
     public void Evict<TEntity>(TEntity entity) where TEntity : class => efStore.Evict<TEntity>(entity);
 
     ///<inherit/>
-    public void LoadExplicit<E, P>(E entity, Expression<Func<E, IEnumerable<P>>> prop) where E : class where P : class
+    public E LoadExplicit<E, P>(E entity, Expression<Func<E, IEnumerable<P>>> prop) where E : class where P : class
       => efStore.LoadExplicit<E, P>(entity, prop);
 
     ///<inherit/>
-    public void LoadExplicit<E, P>(E entity, Expression<Func<E, P>> prop) where E : class where P : class
+    public E LoadExplicit<E, P>(E entity, Expression<Func<E, P>> prop) where E : class where P : class
       => efStore.LoadExplicit<E, P>(entity, prop);
 
     ///<inherit/>
