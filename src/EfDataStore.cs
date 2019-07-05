@@ -31,7 +31,11 @@ namespace Tlabs.Data.Store {
 
     ///<inherit/>
     public void CommitChanges() {
-      ctx.SaveChangesWithEvents();
+      try {
+        ctx.SaveChangesWithEvents();
+      }
+      catch (DbUpdateConcurrencyException e) { throw new DataConcurrentPersistenceException(e); }
+      catch (DbUpdateException e) { throw new DataPersistenceException(e); }
     }
 
     ///<inherit/>
@@ -42,11 +46,15 @@ namespace Tlabs.Data.Store {
     ///<inherit/>
     public void WithTransaction(Action<IDataTransaction> operation) {
       var strategy= ctx.Database.CreateExecutionStrategy();
-      strategy.Execute(() => {
-        using (var tx= new EfDataTransaction<T>(this, ctx.Database)) {
-          operation(tx);
-        }
-      });
+      try {
+        strategy.Execute(() => {
+          using (var tx= new EfDataTransaction<T>(this, ctx.Database)) {
+            operation(tx);
+          }
+        });
+      }
+      catch (DbUpdateConcurrencyException e) { throw new DataConcurrentPersistenceException(e); }
+      catch (DbUpdateException e) { throw new DataPersistenceException(e); }
     }
 
     ///<inherit/>
