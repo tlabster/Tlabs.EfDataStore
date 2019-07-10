@@ -31,7 +31,11 @@ namespace Tlabs.Data.Store {
 
     ///<inherit/>
     public void CommitChanges() {
-      ctx.SaveChangesWithEvents();
+      try {
+        ctx.SaveChangesWithEvents();
+      }
+      catch (DbUpdateConcurrencyException e) { throw new DataConcurrentPersistenceException(e); }
+      catch (DbUpdateException e) { throw new DataPersistenceException(e); }
     }
 
     ///<inherit/>
@@ -42,11 +46,15 @@ namespace Tlabs.Data.Store {
     ///<inherit/>
     public void WithTransaction(Action<IDataTransaction> operation) {
       var strategy= ctx.Database.CreateExecutionStrategy();
-      strategy.Execute(() => {
-        using (var tx= new EfDataTransaction<T>(this, ctx.Database)) {
-          operation(tx);
-        }
-      });
+      try {
+        strategy.Execute(() => {
+          using (var tx= new EfDataTransaction<T>(this, ctx.Database)) {
+            operation(tx);
+          }
+        });
+      }
+      catch (DbUpdateConcurrencyException e) { throw new DataConcurrentPersistenceException(e); }
+      catch (DbUpdateException e) { throw new DataPersistenceException(e); }
     }
 
     ///<inherit/>
@@ -99,7 +107,10 @@ namespace Tlabs.Data.Store {
     }
 
     ///<inherit/>
-    public void Insert<TEntity>(TEntity entity) where TEntity : class => ctx.Add<TEntity>(entity);
+    public TEntity Insert<TEntity>(TEntity entity) where TEntity : class {
+      ctx.Add<TEntity>(entity);
+      return entity;
+    }
 
     ///<inherit/>
     public TEntity Merge<TEntity>(TEntity entity) where TEntity : class, new() {
@@ -126,13 +137,19 @@ namespace Tlabs.Data.Store {
     }
 
     ///<inherit/>
-    public void Update<TEntity>(TEntity entity) where TEntity : class => ctx.Update<TEntity>(entity);
+    public TEntity Update<TEntity>(TEntity entity) where TEntity : class {
+      ctx.Update<TEntity>(entity);
+      return entity;
+    }
 
     ///<inherit/>
     public void Delete<TEntity>(TEntity entity) where TEntity : class => ctx.Remove<TEntity>(entity);
 
     ///<inherit/>
-    public void Attach<TEntity>(TEntity entity) where TEntity : class => ctx.Attach<TEntity>(entity);
+    public TEntity Attach<TEntity>(TEntity entity) where TEntity : class {
+      ctx.Attach<TEntity>(entity);
+      return entity;
+    }
 
     ///<inherit/>
     public void Evict<TEntity>(TEntity entity) where TEntity : class {
@@ -142,13 +159,17 @@ namespace Tlabs.Data.Store {
     }
 
     ///<inherit/>
-    public void LoadExplicit<E, P>(E entity, Expression<Func<E, IEnumerable<P>>> prop) where E : class where P : class
-      => ctx.Entry(entity).Collection(prop).Load();
+    public E LoadExplicit<E, P>(E entity, Expression<Func<E, IEnumerable<P>>> prop) where E : class where P : class {
+      ctx.Entry(entity).Collection(prop).Load();
+      return entity;
+    }
 
     ///<inherit/>
-    public void LoadExplicit<E, P>(E entity, Expression<Func<E, P>> prop) where E : class where P : class
-      => ctx.Entry(entity).Reference(prop).Load();
-
+    public E LoadExplicit<E, P>(E entity, Expression<Func<E, P>> prop) where E : class where P : class {
+      ctx.Entry(entity).Reference(prop).Load();
+      return entity;
+    }
+    
     ///<inherit/>
     public IQueryable<E> LoadRelated<E>(IQueryable<E> query, string navigationPropertyPath) where E : class => query.Include(navigationPropertyPath);
 
