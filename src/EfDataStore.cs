@@ -147,7 +147,8 @@ namespace Tlabs.Data.Store {
 
     ///<inherit/>
     public TEntity Attach<TEntity>(TEntity entity) where TEntity : class {
-      ctx.Attach<TEntity>(entity);
+      try { ctx.Attach<TEntity>(entity); }
+      catch (InvalidOperationException) { /* already attached? */ }
       return entity;
     }
 
