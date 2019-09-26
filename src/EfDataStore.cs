@@ -55,6 +55,7 @@ namespace Tlabs.Data.Store {
       }
       catch (DbUpdateConcurrencyException e) { throw new DataConcurrentPersistenceException(e); }
       catch (DbUpdateException e) { throw new DataPersistenceException(e); }
+      catch (Exception e) { throw new DataTransactionException(e); }
     }
 
     ///<inherit/>
