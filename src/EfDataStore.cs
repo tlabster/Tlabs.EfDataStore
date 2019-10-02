@@ -44,6 +44,14 @@ namespace Tlabs.Data.Store {
     }
 
     ///<inherit/>
+    public void ResetAll() {
+      foreach (var entry in ctx.ChangeTracker.Entries().Where(e => e.Entity != null)) {
+        entry.State= EntityState.Added;   // mark as 'added' (only) to just evict on remove...
+        ctx.Remove(entry.Entity);
+      }
+    }
+
+    ///<inherit/>
     public void WithTransaction(Action<IDataTransaction> operation) {
       var strategy= ctx.Database.CreateExecutionStrategy();
       try {
