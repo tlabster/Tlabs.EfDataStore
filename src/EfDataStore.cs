@@ -45,7 +45,8 @@ namespace Tlabs.Data.Store {
 
     ///<inherit/>
     public void ResetAll() {
-      foreach (var entry in ctx.ChangeTracker.Entries().Where(e => e.Entity != null)) {
+      Microsoft.EntityFrameworkCore.ChangeTracking.EntityEntry entry;
+      while (null != (entry= ctx.ChangeTracker.Entries().Where(e => e.Entity != null).FirstOrDefault())) {
         entry.State= EntityState.Added;   // mark as 'added' (only) to just evict on remove...
         ctx.Remove(entry.Entity);
       }
