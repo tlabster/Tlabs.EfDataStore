@@ -33,7 +33,8 @@ namespace Tlabs.Data.Store {
               .UseLoggerFactory(Tlabs.App.LogFactory)   //***TODO: for a strange reason w/o this line, log entries from Microsoft.EntityFrameworkCore won't appear */
            // .EnableSensitiveDataLogging()
               .ConfigureWarnings(warnings => {
-                warnings.Log(RelationalEventId.QueryClientEvaluationWarning);
+                // warnings.Log(RelationalEventId.QueryClientEvaluationWarning);
+                warnings.Throw(RelationalEventId.QueryClientEvaluationWarning);
                 warnings.Log(RelationalEventId.QueryPossibleUnintendedUseOfEqualsWarning);
                 warnings.Default(WarningBehavior.Log);
               });
