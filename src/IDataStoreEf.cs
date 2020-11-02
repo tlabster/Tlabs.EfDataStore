@@ -60,13 +60,22 @@ namespace Tlabs.Data.Store {
     public TEntity Insert<TEntity>(TEntity entity) where TEntity : class => efStore.Insert<TEntity>(entity);
 
     ///<inherit/>
+    public IEnumerable<E> Insert<E>(IEnumerable<E> entities) where E : class => efStore.Insert(entities);
+
+    ///<inherit/>
     public TEntity Merge<TEntity>(TEntity entity) where TEntity : class, new() => efStore.Merge<TEntity>(entity);
 
     ///<inherit/>
     public TEntity Update<TEntity>(TEntity entity) where TEntity : class => efStore.Update<TEntity>(entity);
 
     ///<inherit/>
+    public IEnumerable<E> Update<E>(IEnumerable<E> entities) where E : class => efStore.Update(entities);
+
+    ///<inherit/>
     public void Delete<TEntity>(TEntity entity) where TEntity : class => efStore.Delete<TEntity>(entity);
+
+    ///<inherit/>
+    public void Delete<E>(IEnumerable<E> entities) where E : class => efStore.Delete(entities);
 
     ///<inherit/>
     public TEntity Attach<TEntity>(TEntity entity) where TEntity : class => efStore.Attach<TEntity>(entity);
