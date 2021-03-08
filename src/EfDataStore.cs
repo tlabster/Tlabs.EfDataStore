@@ -123,6 +123,12 @@ namespace Tlabs.Data.Store {
     }
 
     ///<inherit/>
+    public IEnumerable<TEntity> Insert<TEntity>(IEnumerable<TEntity> entities) where TEntity : class {
+      ctx.AddRange(entities);
+      return entities;
+    }
+
+    ///<inherit/>
     public TEntity Merge<TEntity>(TEntity entity) where TEntity : class, new() {
       TEntity persEnt= Get<TEntity>(GetIdentifier(entity));
       if (null == persEnt) {
@@ -153,7 +159,16 @@ namespace Tlabs.Data.Store {
     }
 
     ///<inherit/>
+    public IEnumerable<TEntity> Update<TEntity>(IEnumerable<TEntity> entities) where TEntity : class {
+      ctx.UpdateRange(entities);
+      return entities;
+    }
+
+    ///<inherit/>
     public void Delete<TEntity>(TEntity entity) where TEntity : class => ctx.Remove<TEntity>(entity);
+
+    ///<inherit/>
+    public void Delete<TEntity>(IEnumerable<TEntity> entities) where TEntity : class => ctx.RemoveRange(entities);
 
     ///<inherit/>
     public TEntity Attach<TEntity>(TEntity entity) where TEntity : class {
