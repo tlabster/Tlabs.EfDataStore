@@ -12,6 +12,7 @@ using Microsoft.EntityFrameworkCore.Query;
 using Microsoft.Extensions.Logging;
 
 using Tlabs.Data.Store.Intern;
+using System.Threading;
 
 namespace Tlabs.Data.Store {
 
@@ -110,10 +111,7 @@ namespace Tlabs.Data.Store {
 
     ///<inherit/>
     public System.Linq.IQueryable<TEntity> UntrackedQuery<TEntity>() where TEntity : class {
-      var et= ctx.Model.FindEntityType(typeof(TEntity).FullName);
-      return   (null == et || !et.IsQueryType)
-             ? Query<TEntity>().AsNoTracking()
-             : ctx.Query<TEntity>();            //support of query type(s)
+      return Query<TEntity>().AsNoTracking(); //ctx.Query<TEntity>() marked obsolete, this also support keyless query type entites...
     }
 
     ///<inherit/>
@@ -231,7 +229,7 @@ namespace Tlabs.Data.Store {
       }
     }
 
-    private class EagerLoadedQueryable<E, P> : IEagerLoadedQueryable<E, P>, IIncludableQueryable<E, P>, IAsyncEnumerable<E> {
+    private class EagerLoadedQueryable<E, P> : IEagerLoadedQueryable<E, P>, IIncludableQueryable<E, P> {
       private readonly IQueryable<E> q;
       public EagerLoadedQueryable(IQueryable<E> q) {
         this.q = q;
@@ -239,9 +237,9 @@ namespace Tlabs.Data.Store {
       public Expression Expression => q.Expression;
       public Type ElementType => q.ElementType;
       public IQueryProvider Provider => q.Provider;
+
       public IEnumerator<E> GetEnumerator() => q.GetEnumerator();
       IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
-      IAsyncEnumerator<E> IAsyncEnumerable<E>.GetEnumerator() => ((IAsyncEnumerable<E>)q).GetEnumerator();
     }
 
   }
