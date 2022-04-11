@@ -16,7 +16,7 @@ namespace Tlabs.Data.Store {
   public abstract class DbServerConfigurator<T> : IConfigurator<IServiceCollection> where T : class, IDStoreCtxConfigurator {
     ///<summary>Database connection string from configuration.</summary>
     protected string connStr;
-    IDictionary<string, string> config;
+    readonly IDictionary<string, string> config;
     ///<summary>Default ctor.</summary>
     protected DbServerConfigurator() : this(null) { }
     ///<summary>Ctor from <paramref name="config"/>.</summary>

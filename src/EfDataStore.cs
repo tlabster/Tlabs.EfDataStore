@@ -18,8 +18,8 @@ namespace Tlabs.Data.Store {
 
   ///<summary><see cref="IDataStore"/> implementaion based on the Entity Framework Core and a <see cref="DbContext"/>.</summary>
   public class EfDataStore<T> : IDataStore, IDisposable where T : DbContext {
-    private T ctx;
-    private ILogger<EfDataStore<T>> log;
+    readonly T ctx;
+    readonly ILogger<EfDataStore<T>> log;
 
     ///<summary>Ctor from <paramref name="ctx"/> and <paramref name="log"/>.</summary>
     public EfDataStore(T ctx, ILogger<EfDataStore<T>> log) {
@@ -58,9 +58,8 @@ namespace Tlabs.Data.Store {
       var strategy= ctx.Database.CreateExecutionStrategy();
       try {
         strategy.Execute(() => {
-          using (var tx= new EfDataTransaction<T>(this, ctx.Database)) {
-            operation(tx);
-          }
+          using var tx= new EfDataTransaction<T>(this, ctx.Database);
+          operation(tx);
         });
       }
       catch (DbUpdateConcurrencyException e) { throw new DataConcurrentPersistenceException(e); }
@@ -78,7 +77,7 @@ namespace Tlabs.Data.Store {
       if (null == seeds) return;
       
       foreach(var dataSeed in seeds) {
-        log.LogWarning($"Ensuring '{dataSeed.Campaign}'.");
+        log.LogWarning("Ensuring '{campaign}'", dataSeed.Campaign);
         dataSeed.Perform();
       }
     }
@@ -139,7 +138,6 @@ namespace Tlabs.Data.Store {
       /* We only want to merge in value properties or non-null values.
        * For this reason we can not use: entEntry.CurrentValues.SetValues(entity);
        */
-      var sample= new TEntity();
       foreach (var prop in entEntry.Properties) {
         var pi= typeof(TEntity).GetRuntimeProperty(prop.Metadata.Name);
         //var pi= typeof(TEntity).GetRuntimeProperties().Where(p => p.Name == prop.Metadata.Name).SingleOrDefault();
@@ -227,6 +225,7 @@ namespace Tlabs.Data.Store {
         log.LogDebug($"{nameof(EfDataStore<T>)} auto committing changes on disposed.");
         CommitChanges();
       }
+      GC.SuppressFinalize(this);
     }
 
     private class EagerLoadedQueryable<E, P> : IEagerLoadedQueryable<E, P>, IIncludableQueryable<E, P> {

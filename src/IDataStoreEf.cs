@@ -10,7 +10,7 @@ namespace Tlabs.Data.Store {
   ///<summary>Wrapper to convert a <see cref="EfDataStore{T}"/> into a <see cref="IDataStore"/> implementaion.</summary>
   public class IDataStoreEf<T> : IDataStore, IDisposable where T : DbContext {
 
-    private EfDataStore<T> efStore;
+    readonly EfDataStore<T> efStore;
 
     ///<summary>Ctor from <paramref name="efStore"/>.</summary>
     public IDataStoreEf(EfDataStore<T> efStore) {
@@ -100,8 +100,10 @@ namespace Tlabs.Data.Store {
 
 
     ///<inherit/>
-    public void Dispose() => efStore.Dispose();
-
+    public void Dispose() {
+      efStore.Dispose();
+      GC.SuppressFinalize(this);
+    }
   }
 
 }

@@ -28,8 +28,8 @@ namespace Tlabs.Data.Store {
   ///<see cref="IDStoreCtxConfigurator"/> implementation of type <typeparamref name="T"/>.
   ///</remarks>
   public class DStoreContext<T> : DbContext where T : IDStoreCtxConfigurator {
-    private IDStoreCtxConfigurator ctxCfg;
-    private ILogger log;
+    readonly IDStoreCtxConfigurator ctxCfg;
+    readonly ILogger log;
 
 
     ///<summary>Ctor from see cref="DbContextOptions{T}"/> and <paramref name="log"/>.</summary>
@@ -48,7 +48,7 @@ namespace Tlabs.Data.Store {
 
     ///<inherit/>
     protected override void OnModelCreating(ModelBuilder modelBuilder) {
-      log.LogTrace($"Building db model for {this.GetType()}");
+      log.LogTrace("Building db model for {type}", this.GetType());
       ctxCfg.ConfigureModel(modelBuilder);
     }
   }

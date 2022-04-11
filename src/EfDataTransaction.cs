@@ -6,8 +6,8 @@ namespace Tlabs.Data.Store {
 
   ///<summary>Entityframework core database transcation.</summary>
   public class EfDataTransaction<T> : IDataTransaction where T : DbContext {
-    private EfDataStore<T> store;
-    private DatabaseFacade db;
+    readonly EfDataStore<T> store;
+    readonly DatabaseFacade db;
 
     ///<summary>Ctor from <paramref name="store"/> and <paramref name="db"/>.</summary>
     public EfDataTransaction(EfDataStore<T> store, DatabaseFacade db) {
@@ -34,7 +34,10 @@ namespace Tlabs.Data.Store {
     }
 
     ///<inherit/>
-    public void Dispose() => db.CurrentTransaction?.Dispose();
+    public void Dispose() {
+      db.CurrentTransaction?.Dispose();
+      GC.SuppressFinalize(this);
+    }
   }
 
 }
