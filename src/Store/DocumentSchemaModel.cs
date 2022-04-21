@@ -25,6 +25,10 @@ namespace Tlabs.Data.Store {  //required namespace to supporte generated migrati
           dtAttribBuilder.HasKey(a => a.Id);
           dtAttribBuilder.HasOne(a => a.Schema)
                          .WithMany(d => d.Fields).IsRequired();
+          // Tell EF to use property for ExtMappingInfo since otherwise it would directly set the backing field.
+          // However, we have a setter that generates the actual MappingInfo dictionary from this string, so
+          // we need to use the property setter here.
+          dtAttribBuilder.Property(f => f.ExtMappingInfo).UsePropertyAccessMode(PropertyAccessMode.Property);
         });
 
         modBuilder.Entity<DocumentSchema.ValidationRule>(validBuilder => {
