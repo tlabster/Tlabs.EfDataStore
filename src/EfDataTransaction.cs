@@ -18,22 +18,22 @@ namespace Tlabs.Data.Store {
       var tx= db.BeginTransaction();
       if (tx != db.CurrentTransaction) throw new InvalidOperationException("tx != db.CurrentTransaction");
     }
-    ///<inherit/>
+    ///<inheritdoc/>
     public object Id => db.CurrentTransaction.TransactionId;
 
-    ///<inherit/>
+    ///<inheritdoc/>
     public void Cancel() {
       store.ResetChanges();
       db.CurrentTransaction.Rollback();
     }
 
-    ///<inherit/>
+    ///<inheritdoc/>
     public void Commit() {
       store.CommitChanges();
       db.CurrentTransaction.Commit();
     }
 
-    ///<inherit/>
+    ///<inheritdoc/>
     public void Dispose() {
       db.CurrentTransaction?.Dispose();
       GC.SuppressFinalize(this);

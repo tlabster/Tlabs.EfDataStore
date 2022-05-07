@@ -39,14 +39,14 @@ namespace Tlabs.Data.Store {
     this.ctxCfg= ctxCfg;
   }
 
-    ///<inherit/>
+    ///<inheritdoc/>
     protected override void OnConfiguring(DbContextOptionsBuilder optBuilder) {
       //context MUST be configured per DbContextOptions passed to the ctor
       if (!optBuilder.IsConfigured) throw new InvalidOperationException($"{nameof(DbContextOptionsBuilder)} must be configured.");
       ctxCfg.ConfigureDb(optBuilder);
     }
 
-    ///<inherit/>
+    ///<inheritdoc/>
     protected override void OnModelCreating(ModelBuilder modelBuilder) {
       log.LogTrace("Building db model for {type}", this.GetType());
       ctxCfg.ConfigureModel(modelBuilder);

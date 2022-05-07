@@ -39,13 +39,13 @@ namespace Tlabs.Data.Store {
       this.modelConfigs= modelConfigs;
     }
 
-    ///<inherit/>
+    ///<inheritdoc/>
     public virtual void ConfigureModel(ModelBuilder modBuilder) {
       foreach (var modCfg in modelConfigs)
         modCfg.ConfigureModel(modBuilder);
     }
 
-    ///<inherit/>
+    ///<inheritdoc/>
     public virtual void ConfigureDb(DbContextOptionsBuilder optBuilder) {
       if (optBuilder.IsConfigured) return; //allready configured
       

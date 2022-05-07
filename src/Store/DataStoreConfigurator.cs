@@ -15,7 +15,7 @@ namespace Tlabs.Data.Store {
   ///<summary><see cref="IDataStore"/> configurator.</summary>
   public class DataStoreConfigurator<T> : IConfigurator<IServiceCollection> where T : class, IDStoreCtxConfigurator {
 
-    ///<inherit/>
+    ///<inheritdoc/>
     public void AddTo(IServiceCollection services, IConfiguration cfg) {
       var log= Tlabs.App.Logger<DataStoreConfigurator<T>>();
 

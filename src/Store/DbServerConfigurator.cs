@@ -24,7 +24,7 @@ namespace Tlabs.Data.Store {
       this.config= config ?? new Dictionary<string, string>(0);
     }
 
-    ///<inherit/>
+    ///<inheritdoc/>
     public void AddTo(IServiceCollection services, IConfiguration cfg) {
       var log= Tlabs.App.Logger<DbServerConfigurator<T>>();
       if (!config.TryGetValue("connection", out connStr)) throw new Tlabs.AppConfigException("Missing 'connection' config proerpty.");
