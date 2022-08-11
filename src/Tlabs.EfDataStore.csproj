@@ -7,6 +7,15 @@
     <!--<RuntimeFrameworkVersion>6.0.1</RuntimeFrameworkVersion>-->
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
 
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <AnalysisLevel>6</AnalysisLevel>
+    <AnalysisMode>Recommended</AnalysisMode>
+    <AnalysisModeSecurity>All</AnalysisModeSecurity>
+    <AnalysisModeNaming>None</AnalysisModeNaming>
+    <!--
+    <AnalysisLevel>6-recommended</AnalysisLevel>
+    -->
+
     <Description>A concrete implementation of a `Tlabs.Data.IDataStore` based on EF Core.</Description>
     <Authors>Tlabs</Authors>
   </PropertyGroup>

@@ -16,7 +16,7 @@ namespace Tlabs.Data.Store {
   public abstract class DbServerConfigurator<T> : IConfigurator<IServiceCollection> where T : class, IDStoreCtxConfigurator {
     ///<summary>Database connection string from configuration.</summary>
     protected string connStr;
-    IDictionary<string, string> config;
+    readonly IDictionary<string, string> config;
     ///<summary>Default ctor.</summary>
     protected DbServerConfigurator() : this(null) { }
     ///<summary>Ctor from <paramref name="config"/>.</summary>
@@ -24,7 +24,7 @@ namespace Tlabs.Data.Store {
       this.config= config ?? new Dictionary<string, string>(0);
     }
 
-    ///<inherit/>
+    ///<inheritdoc/>
     public void AddTo(IServiceCollection services, IConfiguration cfg) {
       var log= Tlabs.App.Logger<DbServerConfigurator<T>>();
       if (!config.TryGetValue("connection", out connStr)) throw new Tlabs.AppConfigException("Missing 'connection' config proerpty.");

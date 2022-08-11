@@ -18,8 +18,8 @@ namespace Tlabs.Data.Store {
 
   ///<summary><see cref="IDataStore"/> implementaion based on the Entity Framework Core and a <see cref="DbContext"/>.</summary>
   public class EfDataStore<T> : IDataStore, IDisposable where T : DbContext {
-    private T ctx;
-    private ILogger<EfDataStore<T>> log;
+    readonly T ctx;
+    readonly ILogger<EfDataStore<T>> log;
 
     ///<summary>Ctor from <paramref name="ctx"/> and <paramref name="log"/>.</summary>
     public EfDataStore(T ctx, ILogger<EfDataStore<T>> log) {
@@ -27,10 +27,10 @@ namespace Tlabs.Data.Store {
       this.log= log;
     }
 
-    ///<inherit/>
+    ///<inheritdoc/>
     public bool AutoCommit { get; set; }
 
-    ///<inherit/>
+    ///<inheritdoc/>
     public void CommitChanges() {
       try {
         ctx.SaveChangesWithEvents();
@@ -39,12 +39,12 @@ namespace Tlabs.Data.Store {
       catch (DbUpdateException e) { throw new DataPersistenceException(e); }
     }
 
-    ///<inherit/>
+    ///<inheritdoc/>
     public void ResetChanges() {
       ctx.ChangeTracker.AcceptAllChanges();
     }
 
-    ///<inherit/>
+    ///<inheritdoc/>
     public void ResetAll() {
       Microsoft.EntityFrameworkCore.ChangeTracking.EntityEntry entry;
       while (null != (entry= ctx.ChangeTracker.Entries().Where(e => e.Entity != null).FirstOrDefault())) {
@@ -53,14 +53,13 @@ namespace Tlabs.Data.Store {
       }
     }
 
-    ///<inherit/>
+    ///<inheritdoc/>
     public void WithTransaction(Action<IDataTransaction> operation) {
       var strategy= ctx.Database.CreateExecutionStrategy();
       try {
         strategy.Execute(() => {
-          using (var tx= new EfDataTransaction<T>(this, ctx.Database)) {
-            operation(tx);
-          }
+          using var tx= new EfDataTransaction<T>(this, ctx.Database);
+          operation(tx);
         });
       }
       catch (DbUpdateConcurrencyException e) { throw new DataConcurrentPersistenceException(e); }
@@ -68,7 +67,7 @@ namespace Tlabs.Data.Store {
       catch (Exception e) { throw new DataTransactionException(e); }
     }
 
-    ///<inherit/>
+    ///<inheritdoc/>
     public void EnsureStore(IEnumerable<IDataSeed> seeds) {
       ctx.Database.Migrate();
       //ctx.Database.EnsureCreated();
@@ -78,7 +77,7 @@ namespace Tlabs.Data.Store {
       if (null == seeds) return;
       
       foreach(var dataSeed in seeds) {
-        log.LogWarning($"Ensuring '{dataSeed.Campaign}'.");
+        log.LogWarning("Ensuring '{campaign}'", dataSeed.Campaign);
         dataSeed.Perform();
       }
     }
@@ -96,37 +95,37 @@ namespace Tlabs.Data.Store {
     }
 
 
-    ///<inherit/>
+    ///<inheritdoc/>
     public TEntity Get<TEntity>(params object[] keys) where TEntity : class => ctx.Find<TEntity>(keys);
 
-    ///<inherit/>
+    ///<inheritdoc/>
     public object GetIdentifier<TEntity>(TEntity entity) where TEntity : class {
       var entEntry= ctx.Entry(entity);
       var idName= entEntry.Metadata.FindPrimaryKey().Properties.Select(x => x.Name).Single();
       return entEntry.CurrentValues[idName];
     }
 
-    ///<inherit/>
+    ///<inheritdoc/>
     public System.Linq.IQueryable<TEntity> Query<TEntity>()  where TEntity : class => ctx.Set<TEntity>();
 
-    ///<inherit/>
+    ///<inheritdoc/>
     public System.Linq.IQueryable<TEntity> UntrackedQuery<TEntity>() where TEntity : class {
       return Query<TEntity>().AsNoTracking(); //ctx.Query<TEntity>() marked obsolete, this also support keyless query type entites...
     }
 
-    ///<inherit/>
+    ///<inheritdoc/>
     public TEntity Insert<TEntity>(TEntity entity) where TEntity : class {
       ctx.Add<TEntity>(entity);
       return entity;
     }
 
-    ///<inherit/>
+    ///<inheritdoc/>
     public IEnumerable<TEntity> Insert<TEntity>(IEnumerable<TEntity> entities) where TEntity : class {
       ctx.AddRange(entities);
       return entities;
     }
 
-    ///<inherit/>
+    ///<inheritdoc/>
     public TEntity Merge<TEntity>(TEntity entity) where TEntity : class, new() {
       TEntity persEnt= Get<TEntity>(GetIdentifier(entity));
       if (null == persEnt) {
@@ -139,7 +138,6 @@ namespace Tlabs.Data.Store {
       /* We only want to merge in value properties or non-null values.
        * For this reason we can not use: entEntry.CurrentValues.SetValues(entity);
        */
-      var sample= new TEntity();
       foreach (var prop in entEntry.Properties) {
         var pi= typeof(TEntity).GetRuntimeProperty(prop.Metadata.Name);
         //var pi= typeof(TEntity).GetRuntimeProperties().Where(p => p.Name == prop.Metadata.Name).SingleOrDefault();
@@ -150,25 +148,25 @@ namespace Tlabs.Data.Store {
       return entEntry.Entity;
     }
 
-    ///<inherit/>
+    ///<inheritdoc/>
     public TEntity Update<TEntity>(TEntity entity) where TEntity : class {
       ctx.Update<TEntity>(entity);
       return entity;
     }
 
-    ///<inherit/>
+    ///<inheritdoc/>
     public IEnumerable<TEntity> Update<TEntity>(IEnumerable<TEntity> entities) where TEntity : class {
       ctx.UpdateRange(entities);
       return entities;
     }
 
-    ///<inherit/>
+    ///<inheritdoc/>
     public void Delete<TEntity>(TEntity entity) where TEntity : class => ctx.Remove<TEntity>(entity);
 
-    ///<inherit/>
+    ///<inheritdoc/>
     public void Delete<TEntity>(IEnumerable<TEntity> entities) where TEntity : class => ctx.RemoveRange(entities);
 
-    ///<inherit/>
+    ///<inheritdoc/>
     public TEntity Attach<TEntity>(TEntity entity) where TEntity : class {
       var entry= ctx.Entry<TEntity>(entity);
       if (EntityState.Detached == entry.State) try {
@@ -180,53 +178,54 @@ namespace Tlabs.Data.Store {
       return entity;
     }
 
-    ///<inherit/>
+    ///<inheritdoc/>
     public void Evict<TEntity>(TEntity entity) where TEntity : class {
       var entry= ctx.Entry<TEntity>(entity);
       entry.State= EntityState.Added;   // mark as 'added' (only) to just evict on remove...
       ctx.Remove<TEntity>(entity);
     }
 
-    ///<inherit/>
+    ///<inheritdoc/>
     public E LoadExplicit<E, P>(E entity, Expression<Func<E, IEnumerable<P>>> prop) where E : class where P : class {
       ctx.Entry(entity).Collection(prop).Load();
       return entity;
     }
 
-    ///<inherit/>
+    ///<inheritdoc/>
     public E LoadExplicit<E, P>(E entity, Expression<Func<E, P>> prop) where E : class where P : class {
       ctx.Entry(entity).Reference(prop).Load();
       return entity;
     }
     
-    ///<inherit/>
+    ///<inheritdoc/>
     public IQueryable<E> LoadRelated<E>(IQueryable<E> query, string navigationPropertyPath) where E : class => query.Include(navigationPropertyPath);
 
-    ///<inherit/>
+    ///<inheritdoc/>
     public IEagerLoadedQueryable<E, P> LoadRelated<E, P>(IQueryable<E> query, Expression<Func<E, P>> navProperty) where E : class {
       var q= query.Include(navProperty);
       return new EagerLoadedQueryable<E, P>(q);
       //return new EagerLoadedQueryable<E, P>(query.Include(navProperty));
     }
 
-    ///<inherit/>
+    ///<inheritdoc/>
     public IEagerLoadedQueryable<E, Prop> ThenLoadRelated<E, Prev, Prop>(IEagerLoadedQueryable<E, IEnumerable<Prev>> query, Expression<Func<Prev, Prop>> navProperty) where E : class {
       var q= (IIncludableQueryable<E, IEnumerable<Prev>>)query;
       return new EagerLoadedQueryable<E, Prop>(q.ThenInclude(navProperty));
     }
 
-    ///<inherit/>
+    ///<inheritdoc/>
     public IEagerLoadedQueryable<E, Prop> ThenLoadRelated<E, Prev, Prop>(IEagerLoadedQueryable<E, Prev> query, Expression<Func<Prev, Prop>> navProperty) where E : class {
       var q= (IIncludableQueryable<E, Prev>)query;
       return new EagerLoadedQueryable<E, Prop>(q.ThenInclude(navProperty));
     }
 
-    ///<inherit/>
+    ///<inheritdoc/>
     public void Dispose() {
       if (AutoCommit) {
         log.LogDebug($"{nameof(EfDataStore<T>)} auto committing changes on disposed.");
         CommitChanges();
       }
+      GC.SuppressFinalize(this);
     }
 
     private class EagerLoadedQueryable<E, P> : IEagerLoadedQueryable<E, P>, IIncludableQueryable<E, P> {

@@ -32,20 +32,20 @@ namespace Tlabs.Data.Store {
 
   /// <summary>Aggregation of <see cref="IDStoreConfigModel"/>(s).</summary>
   public class AggregatingDStoreCtxConfigurator : IDStoreCtxConfigurator {
-    IEnumerable<IDStoreConfigModel> modelConfigs;
+    readonly IEnumerable<IDStoreConfigModel> modelConfigs;
 
     ///<summary>Ctor from enumeration of <see cref="IDStoreConfigModel"/> to be aggregated.</summary>
     public AggregatingDStoreCtxConfigurator(IEnumerable<IDStoreConfigModel> modelConfigs) {
       this.modelConfigs= modelConfigs;
     }
 
-    ///<inherit/>
+    ///<inheritdoc/>
     public virtual void ConfigureModel(ModelBuilder modBuilder) {
       foreach (var modCfg in modelConfigs)
         modCfg.ConfigureModel(modBuilder);
     }
 
-    ///<inherit/>
+    ///<inheritdoc/>
     public virtual void ConfigureDb(DbContextOptionsBuilder optBuilder) {
       if (optBuilder.IsConfigured) return; //allready configured
       

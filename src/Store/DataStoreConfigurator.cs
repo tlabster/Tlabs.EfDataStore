@@ -1,10 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Design;
-using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Logging;
 
 using Tlabs.Config;
@@ -15,7 +10,7 @@ namespace Tlabs.Data.Store {
   ///<summary><see cref="IDataStore"/> configurator.</summary>
   public class DataStoreConfigurator<T> : IConfigurator<IServiceCollection> where T : class, IDStoreCtxConfigurator {
 
-    ///<inherit/>
+    ///<inheritdoc/>
     public void AddTo(IServiceCollection services, IConfiguration cfg) {
       var log= Tlabs.App.Logger<DataStoreConfigurator<T>>();
 
