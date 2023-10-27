@@ -30,7 +30,7 @@ namespace Tlabs.Data.Store {
       var log= Tlabs.App.Logger<DbServerConfigurator<T>>();
       if (!config.TryGetValue("connection", out connStr)) throw new Tlabs.AppConfigException("Missing 'connection' config proerpty.");
 
-      var opt= new DbContextOptionsBuilder<DStoreContext<T>>()
+      var opt= new DbServerCfgContextOptionsBuilder<DStoreContext<T>>(services)
               .UseLoggerFactory(Tlabs.App.LogFactory)   //***TODO: for a strange reason w/o this line, log entries from Microsoft.EntityFrameworkCore won't appear */
            // .EnableSensitiveDataLogging()
               .ConfigureWarnings(warnings => {
@@ -46,6 +46,21 @@ namespace Tlabs.Data.Store {
 
     ///<summary><see cref="DbContextOptions"/> configurator.</summary>
     protected abstract void configureDbOptions(DbContextOptionsBuilder<DStoreContext<T>> opt);
+
+    ///<summary><see cref="DbContextOptionsBuilder{T}"/> implementation with <see cref="SvcCollection"/>.</summary>
+    public class DbServerCfgContextOptionsBuilder<C> : DbContextOptionsBuilder<C>, IDbServerCfgContextOptionsBuilder where C : DbContext {
+      ///<summary>Ctor from <paramref name="svcColl"/>.</summary>
+      public DbServerCfgContextOptionsBuilder(IServiceCollection svcColl) => this.SvcCollection= svcColl;
+      ///<summary><see cref="IServiceCollection"/></summary>
+      public IServiceCollection SvcCollection { get; }
+    }
+
+  }
+
+  ///<summary>interfae of an DbContextOptionsBuilder that provides access to a <see cref="IServiceCollection"/></summary>
+  public interface IDbServerCfgContextOptionsBuilder {
+    ///<summary><see cref="IServiceCollection"/></summary>
+    public IServiceCollection SvcCollection { get; }
   }
 
 }
