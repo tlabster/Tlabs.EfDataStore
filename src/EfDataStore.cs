@@ -230,7 +230,7 @@ namespace Tlabs.Data.Store {
       GC.SuppressFinalize(this);
     }
 
-    private class EagerLoadedQueryable<E, P> : IEagerLoadedQueryable<E, P>, IIncludableQueryable<E, P> {
+    private sealed class EagerLoadedQueryable<E, P> : IEagerLoadedQueryable<E, P>, IIncludableQueryable<E, P> {
       private readonly IQueryable<E> q;
       public EagerLoadedQueryable(IQueryable<E> q) {
         this.q = q;

@@ -172,7 +172,7 @@ namespace Tlabs.Data.Store.Intern {
     }
 
 
-    private class EntityEntryEquality : IEqualityComparer<EntityEntry> {
+    private sealed class EntityEntryEquality : IEqualityComparer<EntityEntry> {
       public Boolean Equals(EntityEntry? x, EntityEntry? y) => ReferenceEquals(x?.Entity, y?.Entity);
       public Int32 GetHashCode(EntityEntry obj) => obj.Entity.GetHashCode();
       public static readonly EntityEntryEquality Comparer= new EntityEntryEquality();
