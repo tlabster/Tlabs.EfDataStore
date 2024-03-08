@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <VersionPrefix>2.1.5</VersionPrefix>
+    <VersionPrefix>2.1.6</VersionPrefix>
     <TargetFramework>net6.0</TargetFramework>
     <OutputType>Library</OutputType>
     <!--<RuntimeFrameworkVersion>6.0.1</RuntimeFrameworkVersion>-->
@@ -23,7 +23,7 @@
   <PropertyGroup>
     <IsPackable>true</IsPackable>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageProjectUrl>https://bitbucket.org/tlabster/tlabs.efdatastore</PackageProjectUrl>
+    <PackageProjectUrl>https://github.com/tlabster/tlabs.efdatastore</PackageProjectUrl>
   </PropertyGroup>
 
   <ItemGroup>
