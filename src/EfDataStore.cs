@@ -46,7 +46,7 @@ namespace Tlabs.Data.Store {
 
     ///<inheritdoc/>
     public void ResetAll() {
-      Microsoft.EntityFrameworkCore.ChangeTracking.EntityEntry entry;
+      Microsoft.EntityFrameworkCore.ChangeTracking.EntityEntry? entry;
       while (null != (entry= ctx.ChangeTracker.Entries().Where(e => e.Entity != null).FirstOrDefault())) {
         entry.State= EntityState.Added;   // mark as 'added' (only) to just evict on remove...
         ctx.Remove(entry.Entity);
@@ -68,14 +68,14 @@ namespace Tlabs.Data.Store {
     }
 
     ///<inheritdoc/>
-    public void EnsureStore(IEnumerable<IDataSeed> seeds) {
+    public void EnsureStore(IEnumerable<IDataSeed>? seeds) {
       ctx.Database.Migrate();
       //ctx.Database.EnsureCreated();
       if (!allMigrationsApplied())
         log.LogWarning("CAUTION: Some required database schema updates (migrations) are missing from being applied!!!");
-      
+
       if (null == seeds) return;
-      
+
       foreach(var dataSeed in seeds) {
         log.LogWarning("Ensuring '{campaign}'", dataSeed.Campaign);
         dataSeed.Perform();
@@ -96,13 +96,15 @@ namespace Tlabs.Data.Store {
 
 
     ///<inheritdoc/>
-    public TEntity Get<TEntity>(params object[] keys) where TEntity : class => ctx.Find<TEntity>(keys);
+    public TEntity Get<TEntity>(params object[] keys) where TEntity : class
+      =>    ctx.Find<TEntity>(keys)
+         ?? throw EX.New<DataEntityNotFoundException<TEntity>>("No data found for '{keys}'", string.Join(", ", keys.Select(k => k.ToString())));
 
     ///<inheritdoc/>
     public object GetIdentifier<TEntity>(TEntity entity) where TEntity : class {
       var entEntry= ctx.Entry(entity);
-      var idName= entEntry.Metadata.FindPrimaryKey().Properties.Select(x => x.Name).Single();
-      return entEntry.CurrentValues[idName];
+      var idName= entEntry.Metadata.FindPrimaryKey()?.Properties.Select(x => x.Name).Single() ?? "?";
+      return entEntry.CurrentValues[idName] ?? throw EX.New<DataEntityNotFoundException>("No value for entity's primary-key '{key}'", idName);
     }
 
     ///<inheritdoc/>
@@ -134,7 +136,7 @@ namespace Tlabs.Data.Store {
       }
 
       var entEntry= ctx.Entry(persEnt);
-      
+
       /* We only want to merge in value properties or non-null values.
        * For this reason we can not use: entEntry.CurrentValues.SetValues(entity);
        */
@@ -142,7 +144,7 @@ namespace Tlabs.Data.Store {
         var pi= typeof(TEntity).GetRuntimeProperty(prop.Metadata.Name);
         //var pi= typeof(TEntity).GetRuntimeProperties().Where(p => p.Name == prop.Metadata.Name).SingleOrDefault();
         var v= pi?.GetValue(entity);
-        if (null != v) 
+        if (null != v)
           prop.CurrentValue= v;
       }
       return entEntry.Entity;
@@ -192,11 +194,11 @@ namespace Tlabs.Data.Store {
     }
 
     ///<inheritdoc/>
-    public E LoadExplicit<E, P>(E entity, Expression<Func<E, P>> prop) where E : class where P : class {
+    public E LoadExplicit<E, P>(E entity, Expression<Func<E, P?>> prop) where E : class where P : class {
       ctx.Entry(entity).Reference(prop).Load();
       return entity;
     }
-    
+
     ///<inheritdoc/>
     public IQueryable<E> LoadRelated<E>(IQueryable<E> query, string navigationPropertyPath) where E : class => query.Include(navigationPropertyPath);
 
@@ -228,7 +230,7 @@ namespace Tlabs.Data.Store {
       GC.SuppressFinalize(this);
     }
 
-    private class EagerLoadedQueryable<E, P> : IEagerLoadedQueryable<E, P>, IIncludableQueryable<E, P> {
+    private sealed class EagerLoadedQueryable<E, P> : IEagerLoadedQueryable<E, P>, IIncludableQueryable<E, P> {
       private readonly IQueryable<E> q;
       public EagerLoadedQueryable(IQueryable<E> q) {
         this.q = q;

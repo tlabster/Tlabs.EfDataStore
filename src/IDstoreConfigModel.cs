@@ -1,13 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
-
-using Tlabs.Config;
-using Tlabs.Data.Entity;
-using Tlabs.Data.Store;
 
 
 namespace Tlabs.Data.Store {
@@ -48,7 +40,7 @@ namespace Tlabs.Data.Store {
     ///<inheritdoc/>
     public virtual void ConfigureDb(DbContextOptionsBuilder optBuilder) {
       if (optBuilder.IsConfigured) return; //allready configured
-      
+
       foreach (var modCfg in modelConfigs)
         modCfg.ConfigureDb(optBuilder);
     }

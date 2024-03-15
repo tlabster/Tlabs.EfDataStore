@@ -22,7 +22,7 @@ namespace Tlabs.Data.Store {
     public bool AutoCommit { get; set; }
 
     ///<inheritdoc/>
-    public void CommitChanges() => efStore.CommitChanges(); 
+    public void CommitChanges() => efStore.CommitChanges();
 
     ///<inheritdoc/>
     public void ResetChanges() => efStore.ResetChanges();
@@ -32,9 +32,9 @@ namespace Tlabs.Data.Store {
 
     ///<inheritdoc/>
     public void WithTransaction(Action<IDataTransaction> operation) => efStore.WithTransaction(operation);
-    
+
     ///<inheritdoc/>
-    public void EnsureStore(IEnumerable<IDataSeed> seeds) => efStore.EnsureStore(seeds);
+    public void EnsureStore(IEnumerable<IDataSeed>? seeds) => efStore.EnsureStore(seeds);
 
     ///<inheritdoc/>
     public TEntity Get<TEntity>(params object[] keys) where TEntity : class => efStore.Get<TEntity>(keys);
@@ -80,7 +80,7 @@ namespace Tlabs.Data.Store {
       => efStore.LoadExplicit<E, P>(entity, prop);
 
     ///<inheritdoc/>
-    public E LoadExplicit<E, P>(E entity, Expression<Func<E, P>> prop) where E : class where P : class
+    public E LoadExplicit<E, P>(E entity, Expression<Func<E, P?>> prop) where E : class where P : class
       => efStore.LoadExplicit<E, P>(entity, prop);
 
     ///<inheritdoc/>

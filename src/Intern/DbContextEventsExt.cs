@@ -23,9 +23,10 @@ namespace Tlabs.Data.Store.Intern {
     }
 
     static object GetOriginal(EntityEntry entry) {
-      var orgEnt= Activator.CreateInstance(entry.Entity.GetType());
+      var orgEnt=    Activator.CreateInstance(entry.Entity.GetType())
+                  ?? throw EX.New<InvalidOperationException>("Failed to create entity of type: {type}", entry.Entity.GetType().Name);
       foreach (var orgProp in entry.Properties)
-        orgProp.Metadata.PropertyInfo.SetValue(orgEnt, orgProp.OriginalValue);
+        orgProp.Metadata.PropertyInfo?.SetValue(orgEnt, orgProp.OriginalValue);
       return orgEnt;
     }
 
@@ -171,8 +172,8 @@ namespace Tlabs.Data.Store.Intern {
     }
 
 
-    private class EntityEntryEquality : IEqualityComparer<EntityEntry> {
-      public Boolean Equals(EntityEntry x, EntityEntry y) => ReferenceEquals(x.Entity, y.Entity);
+    private sealed class EntityEntryEquality : IEqualityComparer<EntityEntry> {
+      public Boolean Equals(EntityEntry? x, EntityEntry? y) => ReferenceEquals(x?.Entity, y?.Entity);
       public Int32 GetHashCode(EntityEntry obj) => obj.Entity.GetHashCode();
       public static readonly EntityEntryEquality Comparer= new EntityEntryEquality();
       private EntityEntryEquality() { }

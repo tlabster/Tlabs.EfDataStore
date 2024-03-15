@@ -21,14 +21,15 @@ namespace Tlabs.Data.Store {
     ///<summary>Default ctor.</summary>
     protected DbServerConfigurator() : this(null) { }
     ///<summary>Ctor from <paramref name="config"/>.</summary>
-    protected DbServerConfigurator(IDictionary<string, string> config) {
+    protected DbServerConfigurator(IDictionary<string, string>? config) {
       this.config= config ?? new Dictionary<string, string>(0);
+      if (!this.config.TryGetValue("connection", out var connStr)) throw new Tlabs.AppConfigException("Missing 'connection' config proerpty.");
+      this.connStr= connStr;
     }
 
     ///<inheritdoc/>
     public void AddTo(IServiceCollection services, IConfiguration cfg) {
       var log= Tlabs.App.Logger<DbServerConfigurator<T>>();
-      if (!config.TryGetValue("connection", out connStr)) throw new Tlabs.AppConfigException("Missing 'connection' config proerpty.");
 
       var opt= new DbServerCfgContextOptionsBuilder<DStoreContext<T>>(services)
               .UseLoggerFactory(Tlabs.App.LogFactory)   //***TODO: for a strange reason w/o this line, log entries from Microsoft.EntityFrameworkCore won't appear */
