@@ -11,7 +11,6 @@ using Tlabs.Data.Entity.Intern;
 
 namespace Tlabs.Data.Store {
 
-#nullable enable
   /// <summary>Model builder extension.</summary>
   ///<remarks>Supports schema scoped entity model configuration:
   ///<code>
@@ -131,4 +130,3 @@ namespace Tlabs.Data.Store {
     internal string Schema { get; }
   }
 }
-#nullable disable
