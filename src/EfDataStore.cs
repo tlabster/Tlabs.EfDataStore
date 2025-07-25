@@ -76,7 +76,7 @@ namespace Tlabs.Data.Store {
 
       if (null == seeds) return;
 
-      foreach(var dataSeed in seeds) {
+      foreach (var dataSeed in seeds) {
         log.LogWarning("Ensuring '{campaign}'", dataSeed.Campaign);
         dataSeed.Perform();
       }
@@ -97,7 +97,7 @@ namespace Tlabs.Data.Store {
 
     ///<inheritdoc/>
     public TEntity Get<TEntity>(params object[] keys) where TEntity : class
-      =>    ctx.Find<TEntity>(keys)
+      => ctx.Find<TEntity>(keys)
          ?? throw EX.New<DataEntityNotFoundException<TEntity>>("No data found for '{keys}'", string.Join(", ", keys.Select(k => k.ToString())));
 
     ///<inheritdoc/>
@@ -108,7 +108,7 @@ namespace Tlabs.Data.Store {
     }
 
     ///<inheritdoc/>
-    public System.Linq.IQueryable<TEntity> Query<TEntity>()  where TEntity : class => ctx.Set<TEntity>();
+    public System.Linq.IQueryable<TEntity> Query<TEntity>() where TEntity : class => ctx.Set<TEntity>();
 
     ///<inheritdoc/>
     public System.Linq.IQueryable<TEntity> UntrackedQuery<TEntity>() where TEntity : class {
@@ -172,11 +172,11 @@ namespace Tlabs.Data.Store {
     public TEntity Attach<TEntity>(TEntity entity) where TEntity : class {
       var entry= ctx.Entry<TEntity>(entity);
       if (EntityState.Detached == entry.State) try {
-        entry.State= EntityState.Unchanged;
-      }
-      catch (InvalidOperationException) {
-        entity= Get<TEntity>(GetIdentifier(entity));
-      }
+          entry.State= EntityState.Unchanged;
+        }
+        catch (InvalidOperationException) {
+          entity= Get<TEntity>(GetIdentifier(entity));
+        }
       return entity;
     }
 

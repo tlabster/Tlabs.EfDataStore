@@ -1,11 +1,16 @@
 ﻿using System;
+using System.Linq;
+using System.Linq.Expressions;
+using System.Text.Json;
+
+using Microsoft.CodeAnalysis.Differencing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+
 using Tlabs.Data.Entity.Intern;
 
 namespace Tlabs.Data.Store {
 
-#nullable enable
   /// <summary>Model builder extension.</summary>
   ///<remarks>Supports schema scoped entity model configuration:
   ///<code>
@@ -18,6 +23,7 @@ namespace Tlabs.Data.Store {
   ///</code>
   ///</remarks>
   public static class ModelBuilderExtension {
+    private const string TestAssemblyPrefix = "xunit.runner.visualstudio.testadapter";
 
     /// <summary>Configure entity of type <typeparamref name="T"/> with <paramref name="schema"/> in the model.</summary>
     public static ModelBuilder Entity<T>(this ModelBuilder bld, string schema, Action<EntityTypeBuilder<T>> buildAction) where T : class {
@@ -44,8 +50,7 @@ namespace Tlabs.Data.Store {
 
     /// <summary>Configure document entity of type <typeparamref name="TDocEntity"/> and <typeparamref name="TBody"/> type with <see cref="SchemaScopedModelBuilder"/>.</summary>
     public static ref SchemaScopedModelBuilder DocEntity<TDocEntity, TBody>(this ref SchemaScopedModelBuilder bld, Action<EntityTypeBuilder<TDocEntity>> buildAction)
-      where TDocEntity : BaseDocument<TDocEntity> where TBody : BaseDocument<TDocEntity>.BodyData
-    {
+      where TDocEntity : BaseDocument<TDocEntity> where TBody : BaseDocument<TDocEntity>.BodyData {
       bld.ModelBuilder.Entity<TDocEntity>(bld.Schema, buildAction);
       bld.ModelBuilder.Entity<TDocEntity>(bld.Schema, builder => {
         builder.HasOne(d => d.Body)
@@ -64,12 +69,64 @@ namespace Tlabs.Data.Store {
       return ref bld;
     }
 
-    /// <summary><see cref="ModelBuilder"/> the db scheme scope.</summary>
-    public readonly struct SchemaScopedModelBuilder {
-      internal SchemaScopedModelBuilder(ModelBuilder mb, string schema) { this.ModelBuilder= mb; this.Schema= schema; }
-      internal ModelBuilder ModelBuilder { get; }
-      internal string Schema { get; }
+    /// <summary>Configure document entity of type <typeparamref name="TDocEntity"/> type with <see cref="SchemaScopedModelBuilder"/>.</summary>
+    public static ref SchemaScopedModelBuilder JsonDocumentEntity<TDocEntity>(this ref SchemaScopedModelBuilder bld, Action<EntityTypeBuilder<TDocEntity>> buildAction)
+      where TDocEntity : DocumentEntity {
+      bld.ModelBuilder.Entity<TDocEntity>(bld.Schema, buildAction);
+      bld.ModelBuilder.Entity<TDocEntity>(bld.Schema, builder => {
+        builder.HasJsonbConversion(b => b.Properties);
+      });
+      var schema= bld.Schema;
+      return ref bld;
+    }
+
+    /// <summary>Configure document entity of type <typeparamref name="TDocEntity"/> type with <see cref="SchemaScopedModelBuilder"/>.</summary>
+    public static ref SchemaScopedModelBuilder EditableJsonDocumentEntity<TDocEntity>(this ref SchemaScopedModelBuilder bld, Action<EntityTypeBuilder<TDocEntity>> buildAction)
+      where TDocEntity : EditableDocumentEntity {
+      bld.ModelBuilder.Entity<TDocEntity>(bld.Schema, buildAction);
+      bld.ModelBuilder.Entity<TDocEntity>(bld.Schema, builder => {
+        builder.HasJsonbConversion(b => b.Properties);
+      });
+      var schema= bld.Schema;
+      return ref bld;
+    }
+
+    /// <summary>
+    /// Creates a mapping of a given <paramref name="propertyExpression"/> to a jsonb field
+    /// </summary>
+    /// <typeparam name="TEntity">Type of the entity being configured</typeparam>
+    /// <typeparam name="TProperty">Type of the property</typeparam>
+    /// <param name="builder">Entity builder</param>
+    /// <param name="propertyExpression">Expression representing the given property</param>
+    /// <returns></returns>
+    public static PropertyBuilder<TProperty?> HasJsonbConversion<TEntity, TProperty>(
+        this EntityTypeBuilder<TEntity> builder,
+        Expression<Func<TEntity, TProperty?>> propertyExpression
+    ) where TEntity : class {
+      var isTestEnvironment = AppDomain.CurrentDomain
+            .GetAssemblies()
+            .Any(a => a.FullName != null && a.FullName.StartsWith(TestAssemblyPrefix, StringComparison.OrdinalIgnoreCase));
+
+      var propertyBuilder = builder.Property(propertyExpression);
+
+      if (isTestEnvironment) {
+        propertyBuilder.HasConversion(
+            v => JsonSerializer.Serialize(v, default(JsonSerializerOptions)),
+            v => v != null ? JsonSerializer.Deserialize<TProperty>(v, default(JsonSerializerOptions)) : default(TProperty)
+        );
+      }
+      else {
+        propertyBuilder.HasColumnType("jsonb");
+      }
+
+      return propertyBuilder;
     }
   }
-#nullable disable
+
+  /// <summary><see cref="ModelBuilder"/> the db scheme scope.</summary>
+  public readonly struct SchemaScopedModelBuilder {
+    internal SchemaScopedModelBuilder(ModelBuilder mb, string schema) { this.ModelBuilder= mb; this.Schema= schema; }
+    internal ModelBuilder ModelBuilder { get; }
+    internal string Schema { get; }
+  }
 }
