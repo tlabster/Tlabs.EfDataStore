@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 
 using Microsoft.EntityFrameworkCore;
@@ -31,7 +32,7 @@ namespace Tlabs.Data.Store.Intern {
       return orgEnt;
     }
 
-    public static async Task<int> SaveChangesWithEventsAsync(this DbContext ctx, Boolean acceptAllChangesOnSuccess = true) {
+    public static async Task<int> SaveChangesWithEventsAsync(this DbContext ctx, CancellationToken token, Boolean acceptAllChangesOnSuccess = true) {
       var chgTck= ctx.ChangeTracker;
       int cnt= 0;
 
@@ -40,7 +41,7 @@ namespace Tlabs.Data.Store.Intern {
 
       try {
         var afterEntries= RaiseBeforeEvents(chgTck);
-        cnt= await ctx.SaveChangesAsync(acceptAllChangesOnSuccess);
+        cnt= await ctx.SaveChangesAsync(acceptAllChangesOnSuccess, token);
         RaiseAfterEvents(afterEntries);
       }
       catch (DbUpdateException dbEx) when (RaiseFailedEvents(chgTck, dbEx)) { } //catch if swallowed

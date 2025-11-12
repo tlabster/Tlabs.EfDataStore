@@ -41,9 +41,9 @@ namespace Tlabs.Data.Store {
     }
 
     ///<inheritdoc/>
-    public async Task CommitChangesAsync() {
+    public async Task CommitChangesAsync(CancellationToken token) {
       try {
-        await ctx.SaveChangesWithEventsAsync();
+        await ctx.SaveChangesWithEventsAsync(token);
       }
       catch (DbUpdateConcurrencyException e) { throw new DataConcurrentPersistenceException(e); }
       catch (DbUpdateException e) { throw new DataPersistenceException(e); }
@@ -110,8 +110,8 @@ namespace Tlabs.Data.Store {
          ?? throw EX.New<DataEntityNotFoundException<TEntity>>("No data found for '{keys}'", string.Join(", ", keys.Select(k => k.ToString())));
 
     ///<inheritdoc/>
-    public async Task<TEntity> GetAsync<TEntity>(params object[] keys) where TEntity : class
-      => await ctx.FindAsync<TEntity>(keys)
+    public async Task<TEntity> GetAsync<TEntity>(CancellationToken token, params object[] keys) where TEntity : class
+      => await ctx.FindAsync<TEntity>(keys, token)
          ?? throw EX.New<DataEntityNotFoundException<TEntity>>("No data found for '{keys}'", string.Join(", ", keys.Select(k => k.ToString())));
 
     ///<inheritdoc/>
@@ -140,8 +140,8 @@ namespace Tlabs.Data.Store {
     }
 
     ///<inheritdoc/>
-    public async Task<TEntity> InsertAsync<TEntity>(TEntity entity) where TEntity : class {
-      await ctx.AddAsync<TEntity>(entity);
+    public async Task<TEntity> InsertAsync<TEntity>(TEntity entity, CancellationToken token) where TEntity : class {
+      await ctx.AddAsync<TEntity>(entity, token);
       return entity;
     }
 
@@ -152,8 +152,8 @@ namespace Tlabs.Data.Store {
     }
 
     ///<inheritdoc/>
-    public async Task<IEnumerable<E>> InsertAsync<E>(IEnumerable<E> entities) where E : class {
-      await ctx.AddRangeAsync(entities);
+    public async Task<IEnumerable<E>> InsertAsync<E>(IEnumerable<E> entities, CancellationToken token) where E : class {
+      await ctx.AddRangeAsync(entities, token);
       return entities;
     }
 
