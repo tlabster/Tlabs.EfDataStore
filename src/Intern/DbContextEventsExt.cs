@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
@@ -11,7 +12,7 @@ namespace Tlabs.Data.Store.Intern {
 
   internal static class DbContextEventsExt {
     //Entity state transitions on canceled operation:
-    static readonly IReadOnlyDictionary<EntityState, EntityState> CANCELLED_STATE= new Dictionary<EntityState, EntityState> {
+    static readonly Dictionary<EntityState, EntityState> CANCELLED_STATE= new Dictionary<EntityState, EntityState> {
       [EntityState.Detached]= EntityState.Detached, //no change
       [EntityState.Added]= EntityState.Detached,    //canceled add -> detached
       [EntityState.Deleted]= EntityState.Modified,  //canceled delete -> best guess modified
@@ -30,6 +31,24 @@ namespace Tlabs.Data.Store.Intern {
       return orgEnt;
     }
 
+    public static async Task<int> SaveChangesWithEventsAsync(this DbContext ctx, Boolean acceptAllChangesOnSuccess = true) {
+      var chgTck= ctx.ChangeTracker;
+      int cnt= 0;
+
+      if (!chgTck.AutoDetectChangesEnabled)
+        chgTck.DetectChanges();
+
+      try {
+        var afterEntries= RaiseBeforeEvents(chgTck);
+        cnt= await ctx.SaveChangesAsync(acceptAllChangesOnSuccess);
+        RaiseAfterEvents(afterEntries);
+      }
+      catch (DbUpdateException dbEx) when (RaiseFailedEvents(chgTck, dbEx)) { } //catch if swallowed
+      catch (Exception e) when (RaiseFailedEvents(chgTck.Entries(), e)) { }
+
+      return cnt;
+    }
+
     public static int SaveChangesWithEvents(this DbContext ctx, Boolean acceptAllChangesOnSuccess = true) {
       var chgTck= ctx.ChangeTracker;
       int cnt= 0;
@@ -42,13 +61,13 @@ namespace Tlabs.Data.Store.Intern {
         cnt= ctx.SaveChanges(acceptAllChangesOnSuccess);
         RaiseAfterEvents(afterEntries);
       }
-      catch (DbUpdateException dbEx) when (RaiseFailedEvents(chgTck, dbEx) ) { } //catch if swallowed
+      catch (DbUpdateException dbEx) when (RaiseFailedEvents(chgTck, dbEx)) { } //catch if swallowed
       catch (Exception e) when (RaiseFailedEvents(chgTck.Entries(), e)) { }
 
       return cnt;
     }
 
-    static readonly IReadOnlyDictionary<EntityState, Func<DataStoreEvent.ITrigger, object, Func<object>, bool>> RAISE_BEFORE=
+    static readonly Dictionary<EntityState, Func<DataStoreEvent.ITrigger, object, Func<object>, bool>> RAISE_BEFORE=
     new Dictionary<EntityState, Func<DataStoreEvent.ITrigger, object, Func<object>, bool>> {
       [EntityState.Added]= (trigger, entity, obtainOrg) => trigger.RaiseInserting(entity),
       [EntityState.Modified]= (trigger, entity, obtainOrg) => trigger.RaiseUpdating(entity, obtainOrg),
@@ -95,7 +114,7 @@ namespace Tlabs.Data.Store.Intern {
       return afterSave;
     }
 
-    static readonly IReadOnlyDictionary<EntityState, Action<DataStoreEvent.ITrigger, object>> RAISE_AFTER=
+    static readonly Dictionary<EntityState, Action<DataStoreEvent.ITrigger, object>> RAISE_AFTER=
     new Dictionary<EntityState, Action<DataStoreEvent.ITrigger, object>> {
       [EntityState.Added]= (trigger, entity) => trigger.RaiseInserted(entity),
       [EntityState.Modified]= (trigger, entity) => trigger.RaiseUpdated(entity),
@@ -104,7 +123,7 @@ namespace Tlabs.Data.Store.Intern {
       [EntityState.Detached]= (trigger, entity) => {}
     };
 
-    private static void RaiseAfterEvents(IEnumerable<AfterSaveEntry> afterEntries)  {
+    private static void RaiseAfterEvents(IEnumerable<AfterSaveEntry> afterEntries) {
       foreach (var afterEntry in afterEntries) {
         RAISE_AFTER[afterEntry.InitialState](DataStoreEvent.Trigger(afterEntry.Entry.Entity.GetType()), afterEntry.Entry.Entity);
 
@@ -132,7 +151,7 @@ namespace Tlabs.Data.Store.Intern {
       return RaiseFailedEvents(chgTck.Entries(), dbEx);
     }
 
-    static readonly IReadOnlyDictionary<EntityState, Func<DataStoreEvent.ITrigger, object, Func<object>, Exception, bool>> RAISE_FAILED=
+    static readonly Dictionary<EntityState, Func<DataStoreEvent.ITrigger, object, Func<object>, Exception, bool>> RAISE_FAILED=
     new Dictionary<EntityState, Func<DataStoreEvent.ITrigger, object, Func<object>, Exception, bool>> {
       [EntityState.Added]= (trigger, entity, obtainOrg, ex) => trigger.RaiseInsertFailed(entity, ex),
       [EntityState.Modified]= (trigger, entity, obtainOrg, ex) => trigger.RaiseUpdateFailed(entity, obtainOrg, ex),
