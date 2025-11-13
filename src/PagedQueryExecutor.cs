@@ -35,7 +35,7 @@ namespace Tlabs.Data.Filter {
     /// <summary>
     /// Executes a paged query and maps entities to models using an async mapper
     /// </summary>
-    public async Task<PagedResult<TModel>> ExecuteAsync<TModel>(
+    public async Task<PagedQueryResult<TModel>> ExecuteAsync<TModel>(
       QuerySpecification<TEntity, TFilterCriteria, TSortCriteria, TSortField> specification,
       Func<TEntity, Task<TModel>> asyncMapper,
       IQueryable<TEntity>? query = null
@@ -49,7 +49,7 @@ namespace Tlabs.Data.Filter {
       var mappingTasks = entities.Select(asyncMapper);
       var models = await Task.WhenAll(mappingTasks);
 
-      return new PagedResult<TModel> {
+      return new PagedQueryResult<TModel> {
         Items = models,
         TotalCount = totalCount,
         Page = specification.Filter.Page,
@@ -60,7 +60,7 @@ namespace Tlabs.Data.Filter {
     /// <summary>
     /// Executes a paged query and maps entities to models using an async mapper
     /// </summary>
-    public async Task<PagedResult<TModel>> ExecuteAsync<TModel>(
+    public async Task<PagedQueryResult<TModel>> ExecuteAsync<TModel>(
       QuerySpecification<TEntity, TFilterCriteria, TSortCriteria, TSortField> specification,
       Func<TEntity, TModel> mapper,
       IQueryable<TEntity>? query
@@ -72,7 +72,7 @@ namespace Tlabs.Data.Filter {
 
       var models = entities.Select(mapper);
 
-      return new PagedResult<TModel> {
+      return new PagedQueryResult<TModel> {
         Items = models,
         TotalCount = totalCount,
         Page = specification.Filter.Page,
