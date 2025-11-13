@@ -43,11 +43,10 @@ namespace Tlabs.Data.Filter {
 
       var entities = query ?? dataStore.UntrackedQuery<TEntity>();
       entities = specification.Apply(entities, filterBuilder, sortBuilder);
-
-      var totalCount = await entities.CountAsync();
-
       var mappingTasks = entities.Select(asyncMapper);
       var models = await Task.WhenAll(mappingTasks);
+
+      var totalCount = await entities.CountAsync();
 
       return new PagedQueryResult<TModel> {
         Items = models,
@@ -65,15 +64,14 @@ namespace Tlabs.Data.Filter {
       Func<TEntity, TModel> mapper,
       IQueryable<TEntity>? query
     ) {
-      var entities = query ?? dataStore.UntrackedQuery<TEntity>();
-      entities = specification.Apply(entities, filterBuilder, sortBuilder);
+      query = query ?? dataStore.UntrackedQuery<TEntity>();
+      query = specification.Apply(query, filterBuilder, sortBuilder);
 
-      var totalCount = await entities.CountAsync();
-
-      var models = entities.Select(mapper);
+      var entities = await query.ToListAsync();
+      var totalCount = await query.CountAsync();
 
       return new PagedQueryResult<TModel> {
-        Items = models,
+        Items = entities.Select(mapper),
         TotalCount = totalCount,
         Page = specification.Filter.Page,
         PageSize = specification.Filter.PageSize
