@@ -1,5 +1,7 @@
 using System;
 using System.Linq;
+using System.Linq.Dynamic.Core;
+using System.Threading;
 using System.Threading.Tasks;
 
 using Microsoft.EntityFrameworkCore;
@@ -38,15 +40,16 @@ namespace Tlabs.Data.Filter {
     public async Task<PagedQueryResult<TModel>> ExecuteAsync<TModel>(
       QuerySpecification<TEntity, TFilterCriteria, TSortCriteria, TSortField> specification,
       Func<TEntity, Task<TModel>> asyncMapper,
-      IQueryable<TEntity>? query = null
+      IQueryable<TEntity>? query = null,
+      CancellationToken token = default
     ) {
 
-      var entities = query ?? dataStore.UntrackedQuery<TEntity>();
-      entities = specification.Apply(entities, filterBuilder, sortBuilder);
-      var mappingTasks = entities.Select(asyncMapper);
+      query ??= dataStore.UntrackedQuery<TEntity>();
+      var filteredQuery = specification.Apply(query, filterBuilder, sortBuilder);
+      var mappingTasks = filteredQuery.Select(asyncMapper);
       var models = await Task.WhenAll(mappingTasks);
 
-      var totalCount = await entities.CountAsync();
+      var totalCount = await GetTotalCountAsync(query, specification.Filter, token);
 
       return new PagedQueryResult<TModel> {
         Items = models,
@@ -62,13 +65,14 @@ namespace Tlabs.Data.Filter {
     public async Task<PagedQueryResult<TModel>> ExecuteAsync<TModel>(
       QuerySpecification<TEntity, TFilterCriteria, TSortCriteria, TSortField> specification,
       Func<TEntity, TModel> mapper,
-      IQueryable<TEntity>? query
+      IQueryable<TEntity>? query,
+      CancellationToken token = default
     ) {
-      query = query ?? dataStore.UntrackedQuery<TEntity>();
-      query = specification.Apply(query, filterBuilder, sortBuilder);
+      query ??= dataStore.UntrackedQuery<TEntity>();
+      var filteredQuery = specification.Apply(query, filterBuilder, sortBuilder);
 
-      var entities = await query.ToListAsync();
-      var totalCount = await query.CountAsync();
+      var entities = await filteredQuery.ToListAsync(token);
+      var totalCount = await GetTotalCountAsync(query, specification.Filter, token);
 
       return new PagedQueryResult<TModel> {
         Items = entities.Select(mapper),
@@ -76,6 +80,32 @@ namespace Tlabs.Data.Filter {
         Page = specification.Filter.Page,
         PageSize = specification.Filter.PageSize
       };
+    }
+
+
+    private async Task<int?> GetTotalCountAsync(IQueryable<TEntity> query, TFilterCriteria? filter, CancellationToken token) {
+      var hasFilter = HasFilterCriteria(filter);
+
+      // If no filter is applied, count without limit (should be fast)
+      // If filter is applied, use the max count limit to avoid performance issues
+      int? maxCount = hasFilter ? filter!.MaxCountLimit : null;
+
+      var count = await (maxCount != null ? query.Take(maxCount.Value).CountAsync(token) : query.CountAsync(token));
+
+      // If limit was applied and reached, return null to indicate unknown total
+      if (maxCount.HasValue && count >= maxCount.Value) {
+        return null;
+      }
+
+      return count;
+    }
+
+    private bool HasFilterCriteria(TFilterCriteria? filter) {
+      if (filter == null)
+        return false;
+
+      var expression = filterBuilder.BuildExpression(filter);
+      return expression != null;
     }
   }
 }
