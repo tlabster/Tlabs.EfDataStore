@@ -45,11 +45,13 @@ namespace Tlabs.Data.Filter {
     ) {
 
       query ??= dataStore.UntrackedQuery<TEntity>();
-      var filteredQuery = specification.Apply(query, filterBuilder, sortBuilder);
-      var mappingTasks = filteredQuery.Select(asyncMapper);
-      var models = await Task.WhenAll(mappingTasks);
+      var filteredQuery = specification.ApplyFilter(query, filterBuilder, sortBuilder);
+      var paginatedQuery = specification.ApplyPagination(filteredQuery, filterBuilder);
 
-      var totalCount = await GetTotalCountAsync(query, specification.Filter, token);
+
+      var mappingTasks = paginatedQuery.Select(asyncMapper);
+      var models = await Task.WhenAll(mappingTasks);
+      var totalCount = await GetTotalCountAsync(filteredQuery, specification.Filter, token);
 
       return new PagedQueryResult<TModel> {
         Items = models,
@@ -69,10 +71,11 @@ namespace Tlabs.Data.Filter {
       CancellationToken token = default
     ) {
       query ??= dataStore.UntrackedQuery<TEntity>();
-      var filteredQuery = specification.Apply(query, filterBuilder, sortBuilder);
+      var filteredQuery = specification.ApplyFilter(query, filterBuilder, sortBuilder);
+      var paginatedQuery = specification.ApplyPagination(filteredQuery, filterBuilder);
 
-      var entities = await filteredQuery.ToListAsync(token);
-      var totalCount = await GetTotalCountAsync(query, specification.Filter, token);
+      var entities = await paginatedQuery.ToListAsync(token);
+      var totalCount = await GetTotalCountAsync(filteredQuery, specification.Filter, token);
 
       return new PagedQueryResult<TModel> {
         Items = entities.Select(mapper),
