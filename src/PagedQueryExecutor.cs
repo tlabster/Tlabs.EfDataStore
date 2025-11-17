@@ -22,6 +22,7 @@ namespace Tlabs.Data.Filter {
     private readonly IDataStore dataStore;
     private readonly IFilterBuilder<TEntity, TFilterCriteria> filterBuilder;
     private readonly ISortBuilder<TEntity, TSortCriteria, TSortField> sortBuilder;
+    private const int countLimitThreshold = 1000;
 
     /// <summary>
     /// Ctor from <paramref name="dataStore"/> <paramref name="filterBuilder"/> and <paramref name="sortBuilder"/>
@@ -55,9 +56,7 @@ namespace Tlabs.Data.Filter {
 
       return new PagedQueryResult<TModel> {
         Items = models,
-        TotalCount = totalCount,
-        Page = specification.Filter.Page,
-        PageSize = specification.Filter.PageSize
+        TotalCount = totalCount
       };
     }
 
@@ -79,9 +78,7 @@ namespace Tlabs.Data.Filter {
 
       return new PagedQueryResult<TModel> {
         Items = entities.Select(mapper),
-        TotalCount = totalCount,
-        Page = specification.Filter.Page,
-        PageSize = specification.Filter.PageSize
+        TotalCount = totalCount
       };
     }
 
@@ -91,7 +88,7 @@ namespace Tlabs.Data.Filter {
 
       // If no filter is applied, count without limit (should be fast)
       // If filter is applied, use the max count limit to avoid performance issues
-      int? maxCount = hasFilter ? filter!.MaxCountLimit : null;
+      int? maxCount = hasFilter ? countLimitThreshold : null;
 
       var count = await (maxCount != null ? query.Take(maxCount.Value).CountAsync(token) : query.CountAsync(token));
 
