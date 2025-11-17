@@ -1,4 +1,5 @@
 ﻿using System;
+
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.Logging;
@@ -34,10 +35,10 @@ namespace Tlabs.Data.Store {
 
     ///<summary>Ctor from see cref="DbContextOptions{T}"/> and <paramref name="log"/>.</summary>
     public DStoreContext(DbContextOptions<DStoreContext<T>> opt, T ctxCfg, ILogger<DStoreContext<T>> log) : base(opt) {
-    this.log= log;
-    log.LogTrace("Db context created.");
-    this.ctxCfg= ctxCfg;
-  }
+      this.log= log;
+      log.LogTrace("Db context created.");
+      this.ctxCfg= ctxCfg;
+    }
 
     ///<inheritdoc/>
     protected override void OnConfiguring(DbContextOptionsBuilder optBuilder) {

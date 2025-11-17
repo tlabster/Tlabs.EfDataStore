@@ -13,6 +13,7 @@ using Microsoft.Extensions.Logging;
 
 using Tlabs.Data.Store.Intern;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace Tlabs.Data.Store {
 
@@ -23,8 +24,8 @@ namespace Tlabs.Data.Store {
 
     ///<summary>Ctor from <paramref name="ctx"/> and <paramref name="log"/>.</summary>
     public EfDataStore(T ctx, ILogger<EfDataStore<T>> log) {
-      this.ctx= ctx;
-      this.log= log;
+      this.ctx = ctx;
+      this.log = log;
     }
 
     ///<inheritdoc/>
@@ -40,6 +41,15 @@ namespace Tlabs.Data.Store {
     }
 
     ///<inheritdoc/>
+    public async Task CommitChangesAsync(CancellationToken token) {
+      try {
+        await ctx.SaveChangesWithEventsAsync(token);
+      }
+      catch (DbUpdateConcurrencyException e) { throw new DataConcurrentPersistenceException(e); }
+      catch (DbUpdateException e) { throw new DataPersistenceException(e); }
+    }
+
+    ///<inheritdoc/>
     public void ResetChanges() {
       ctx.ChangeTracker.AcceptAllChanges();
     }
@@ -47,18 +57,18 @@ namespace Tlabs.Data.Store {
     ///<inheritdoc/>
     public void ResetAll() {
       Microsoft.EntityFrameworkCore.ChangeTracking.EntityEntry? entry;
-      while (null != (entry= ctx.ChangeTracker.Entries().Where(e => e.Entity != null).FirstOrDefault())) {
-        entry.State= EntityState.Added;   // mark as 'added' (only) to just evict on remove...
+      while (null != (entry = ctx.ChangeTracker.Entries().Where(e => e.Entity != null).FirstOrDefault())) {
+        entry.State = EntityState.Added;   // mark as 'added' (only) to just evict on remove...
         ctx.Remove(entry.Entity);
       }
     }
 
     ///<inheritdoc/>
     public void WithTransaction(Action<IDataTransaction> operation) {
-      var strategy= ctx.Database.CreateExecutionStrategy();
+      var strategy = ctx.Database.CreateExecutionStrategy();
       try {
         strategy.Execute(() => {
-          using var tx= new EfDataTransaction<T>(this, ctx.Database);
+          using var tx = new EfDataTransaction<T>(this, ctx.Database);
           operation(tx);
         });
       }
@@ -83,17 +93,16 @@ namespace Tlabs.Data.Store {
     }
 
     private bool allMigrationsApplied() {
-      var applied= ctx.GetService<IHistoryRepository>()
+      var applied = ctx.GetService<IHistoryRepository>()
         .GetAppliedMigrations()
         .Select(m => m.MigrationId);
 
-      var total= ctx.GetService<IMigrationsAssembly>()
+      var total = ctx.GetService<IMigrationsAssembly>()
         .Migrations
         .Select(m => m.Key);
 
       return !total.Except(applied).Any();
     }
-
 
     ///<inheritdoc/>
     public TEntity Get<TEntity>(params object[] keys) where TEntity : class
@@ -101,23 +110,38 @@ namespace Tlabs.Data.Store {
          ?? throw EX.New<DataEntityNotFoundException<TEntity>>("No data found for '{keys}'", string.Join(", ", keys.Select(k => k.ToString())));
 
     ///<inheritdoc/>
+    public async Task<TEntity> GetAsync<TEntity>(CancellationToken token, params object[] keys) where TEntity : class
+      => await ctx.FindAsync<TEntity>(keys, token)
+         ?? throw EX.New<DataEntityNotFoundException<TEntity>>("No data found for '{keys}'", string.Join(", ", keys.Select(k => k.ToString())));
+
+    ///<inheritdoc/>
     public object GetIdentifier<TEntity>(TEntity entity) where TEntity : class {
-      var entEntry= ctx.Entry(entity);
-      var idName= entEntry.Metadata.FindPrimaryKey()?.Properties.Select(x => x.Name).Single() ?? "?";
+      var entEntry = ctx.Entry(entity);
+      var idName = entEntry.Metadata.FindPrimaryKey()?.Properties.Select(x => x.Name).Single() ?? "?";
       return entEntry.CurrentValues[idName] ?? throw EX.New<DataEntityNotFoundException>("No value for entity's primary-key '{key}'", idName);
     }
 
     ///<inheritdoc/>
-    public System.Linq.IQueryable<TEntity> Query<TEntity>() where TEntity : class => ctx.Set<TEntity>();
+    public System.Linq.IQueryable<TEntity> Query<TEntity>(
+    ) where TEntity : class {
+      return ctx.Set<TEntity>();
+    }
 
     ///<inheritdoc/>
-    public System.Linq.IQueryable<TEntity> UntrackedQuery<TEntity>() where TEntity : class {
-      return Query<TEntity>().AsNoTracking(); //ctx.Query<TEntity>() marked obsolete, this also support keyless query type entites...
+    public System.Linq.IQueryable<TEntity> UntrackedQuery<TEntity>(
+    ) where TEntity : class {
+      return Query<TEntity>().AsNoTracking();
     }
 
     ///<inheritdoc/>
     public TEntity Insert<TEntity>(TEntity entity) where TEntity : class {
       ctx.Add<TEntity>(entity);
+      return entity;
+    }
+
+    ///<inheritdoc/>
+    public async Task<TEntity> InsertAsync<TEntity>(TEntity entity, CancellationToken token) where TEntity : class {
+      await ctx.AddAsync<TEntity>(entity, token);
       return entity;
     }
 
@@ -128,24 +152,29 @@ namespace Tlabs.Data.Store {
     }
 
     ///<inheritdoc/>
+    public async Task<IEnumerable<E>> InsertAsync<E>(IEnumerable<E> entities, CancellationToken token) where E : class {
+      await ctx.AddRangeAsync(entities, token);
+      return entities;
+    }
+
+    ///<inheritdoc/>
     public TEntity Merge<TEntity>(TEntity entity) where TEntity : class, new() {
-      TEntity persEnt= Get<TEntity>(GetIdentifier(entity));
+      TEntity persEnt = Get<TEntity>(GetIdentifier(entity));
       if (null == persEnt) {
         Insert<TEntity>(entity);
         return entity;
       }
 
-      var entEntry= ctx.Entry(persEnt);
+      var entEntry = ctx.Entry(persEnt);
 
       /* We only want to merge in value properties or non-null values.
        * For this reason we can not use: entEntry.CurrentValues.SetValues(entity);
        */
       foreach (var prop in entEntry.Properties) {
-        var pi= typeof(TEntity).GetRuntimeProperty(prop.Metadata.Name);
-        //var pi= typeof(TEntity).GetRuntimeProperties().Where(p => p.Name == prop.Metadata.Name).SingleOrDefault();
-        var v= pi?.GetValue(entity);
+        var pi = typeof(TEntity).GetRuntimeProperty(prop.Metadata.Name);
+        var v = pi?.GetValue(entity);
         if (null != v)
-          prop.CurrentValue= v;
+          prop.CurrentValue = v;
       }
       return entEntry.Entity;
     }
@@ -170,20 +199,20 @@ namespace Tlabs.Data.Store {
 
     ///<inheritdoc/>
     public TEntity Attach<TEntity>(TEntity entity) where TEntity : class {
-      var entry= ctx.Entry<TEntity>(entity);
+      var entry = ctx.Entry<TEntity>(entity);
       if (EntityState.Detached == entry.State) try {
-          entry.State= EntityState.Unchanged;
+          entry.State = EntityState.Unchanged;
         }
         catch (InvalidOperationException) {
-          entity= Get<TEntity>(GetIdentifier(entity));
+          entity = Get<TEntity>(GetIdentifier(entity));
         }
       return entity;
     }
 
     ///<inheritdoc/>
     public void Evict<TEntity>(TEntity entity) where TEntity : class {
-      var entry= ctx.Entry<TEntity>(entity);
-      entry.State= EntityState.Added;   // mark as 'added' (only) to just evict on remove...
+      var entry = ctx.Entry<TEntity>(entity);
+      entry.State = EntityState.Added;   // mark as 'added' (only) to just evict on remove...
       ctx.Remove<TEntity>(entity);
     }
 
@@ -204,20 +233,20 @@ namespace Tlabs.Data.Store {
 
     ///<inheritdoc/>
     public IEagerLoadedQueryable<E, P> LoadRelated<E, P>(IQueryable<E> query, Expression<Func<E, P>> navProperty) where E : class {
-      var q= query.Include(navProperty);
+      var q = query.Include(navProperty);
       return new EagerLoadedQueryable<E, P>(q);
       //return new EagerLoadedQueryable<E, P>(query.Include(navProperty));
     }
 
     ///<inheritdoc/>
     public IEagerLoadedQueryable<E, Prop> ThenLoadRelated<E, Prev, Prop>(IEagerLoadedQueryable<E, IEnumerable<Prev>> query, Expression<Func<Prev, Prop>> navProperty) where E : class {
-      var q= (IIncludableQueryable<E, IEnumerable<Prev>>)query;
+      var q = (IIncludableQueryable<E, IEnumerable<Prev>>)query;
       return new EagerLoadedQueryable<E, Prop>(q.ThenInclude(navProperty));
     }
 
     ///<inheritdoc/>
     public IEagerLoadedQueryable<E, Prop> ThenLoadRelated<E, Prev, Prop>(IEagerLoadedQueryable<E, Prev> query, Expression<Func<Prev, Prop>> navProperty) where E : class {
-      var q= (IIncludableQueryable<E, Prev>)query;
+      var q = (IIncludableQueryable<E, Prev>)query;
       return new EagerLoadedQueryable<E, Prop>(q.ThenInclude(navProperty));
     }
 

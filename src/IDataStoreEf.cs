@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Threading;
+using System.Threading.Tasks;
 
 using Microsoft.EntityFrameworkCore;
 
@@ -25,6 +27,11 @@ namespace Tlabs.Data.Store {
     public void CommitChanges() => efStore.CommitChanges();
 
     ///<inheritdoc/>
+    public async Task CommitChangesAsync(CancellationToken token) {
+      await efStore.CommitChangesAsync(token);
+    }
+
+    ///<inheritdoc/>
     public void ResetChanges() => efStore.ResetChanges();
 
     ///<inheritdoc/>
@@ -40,10 +47,15 @@ namespace Tlabs.Data.Store {
     public TEntity Get<TEntity>(params object[] keys) where TEntity : class => efStore.Get<TEntity>(keys);
 
     ///<inheritdoc/>
+    public async Task<E> GetAsync<E>(CancellationToken token, params object[] ids) where E : class {
+      return await efStore.GetAsync<E>(token, ids);
+    }
+
+    ///<inheritdoc/>
     public object GetIdentifier<TEntity>(TEntity entity) where TEntity : class => efStore.GetIdentifier<TEntity>(entity);
 
     ///<inheritdoc/>
-    public System.Linq.IQueryable<TEntity> Query<TEntity>()  where TEntity : class => efStore.Query<TEntity>();
+    public System.Linq.IQueryable<TEntity> Query<TEntity>() where TEntity : class => efStore.Query<TEntity>();
 
     ///<inheritdoc/>
     public System.Linq.IQueryable<TEntity> UntrackedQuery<TEntity>() where TEntity : class => efStore.UntrackedQuery<TEntity>();
@@ -53,6 +65,16 @@ namespace Tlabs.Data.Store {
 
     ///<inheritdoc/>
     public IEnumerable<E> Insert<E>(IEnumerable<E> entities) where E : class => efStore.Insert(entities);
+
+    ///<inheritdoc/>
+    public async Task<IEnumerable<E>> InsertAsync<E>(IEnumerable<E> entities, CancellationToken token) where E : class {
+      return await efStore.InsertAsync(entities, token);
+    }
+
+    ///<inheritdoc/>
+    public async Task<E> InsertAsync<E>(E ent, CancellationToken token) where E : class {
+      return await efStore.InsertAsync(ent, token);
+    }
 
     ///<inheritdoc/>
     public TEntity Merge<TEntity>(TEntity entity) where TEntity : class, new() => efStore.Merge<TEntity>(entity);
@@ -98,12 +120,10 @@ namespace Tlabs.Data.Store {
     public IEagerLoadedQueryable<E, Prop> ThenLoadRelated<E, Prev, Prop>(IEagerLoadedQueryable<E, Prev> query, Expression<Func<Prev, Prop>> navProperty) where E : class
       => efStore.ThenLoadRelated<E, Prev, Prop>(query, navProperty);
 
-
     ///<inheritdoc/>
     public void Dispose() {
       efStore.Dispose();
       GC.SuppressFinalize(this);
     }
   }
-
 }
