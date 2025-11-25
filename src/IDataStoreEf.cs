@@ -121,6 +121,19 @@ namespace Tlabs.Data.Store {
       => efStore.ThenLoadRelated<E, Prev, Prop>(query, navProperty);
 
     ///<inheritdoc/>
+    public string GetTableName<E>() => efStore.GetTableName<E>();
+
+    ///<inheritdoc/>
+    public string GetColumnName<E>(string propName) => efStore.GetColumnName<E>(propName);
+
+    ///<inheritdoc/>
+    public IQueryable<E> SqlQuery<E>(FormattableString sqlQuery) => efStore.SqlQuery<E>(sqlQuery);
+
+    ///<inheritdoc/>
+
+    public IQueryable<E> SqlQueryRaw<E>(string sqlQuery, params object[] parameters) => efStore.SqlQueryRaw<E>(sqlQuery, parameters);
+
+    ///<inheritdoc/>
     public void Dispose() {
       efStore.Dispose();
       GC.SuppressFinalize(this);

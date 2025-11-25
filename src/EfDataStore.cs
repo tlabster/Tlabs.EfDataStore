@@ -14,6 +14,8 @@ using Microsoft.Extensions.Logging;
 using Tlabs.Data.Store.Intern;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion.Internal;
 
 namespace Tlabs.Data.Store {
 
@@ -248,6 +250,37 @@ namespace Tlabs.Data.Store {
     public IEagerLoadedQueryable<E, Prop> ThenLoadRelated<E, Prev, Prop>(IEagerLoadedQueryable<E, Prev> query, Expression<Func<Prev, Prop>> navProperty) where E : class {
       var q = (IIncludableQueryable<E, Prev>)query;
       return new EagerLoadedQueryable<E, Prop>(q.ThenInclude(navProperty));
+    }
+
+    ///<inheritdoc/>
+    public string GetTableName<E>() {
+      var mapping = ctx.Model.FindEntityType(typeof(E));
+      if (mapping == null) { throw new InvalidOperationException(""); }
+
+      var tableName = mapping.GetTableName();
+      var schema = mapping.GetSchema();
+
+      if (tableName == null) { throw new InvalidOperationException(""); }
+
+      return schema != null ? $"{schema}.{tableName}" : $"{tableName}";
+    }
+
+    ///<inheritdoc/>
+    public string GetColumnName<E>(string propName) {
+      var mapping = ctx.Model.FindEntityType(typeof(E));
+      if (mapping == null) { throw new InvalidOperationException(""); }
+
+      return mapping.GetProperty(propName).Name;
+    }
+
+    ///<inheritdoc/>
+    public IQueryable<E> SqlQueryRaw<E>(string sqlQuery, params object[] parameters) {
+      return ctx.Database.SqlQueryRaw<E>(sqlQuery, parameters);
+    }
+
+    ///<inheritdoc/>
+    public IQueryable<E> SqlQuery<E>(FormattableString sqlQuery) {
+      return ctx.Database.SqlQuery<E>(sqlQuery);
     }
 
     ///<inheritdoc/>
