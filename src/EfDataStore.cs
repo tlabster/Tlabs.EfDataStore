@@ -16,6 +16,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion.Internal;
+using Tlabs.Data.Model;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Tlabs.Data.Store {
 
@@ -253,16 +255,13 @@ namespace Tlabs.Data.Store {
     }
 
     ///<inheritdoc/>
-    public string GetTableName<E>() {
+    public RelationalTableInfo GetTableName<E>() {
       var mapping = ctx.Model.FindEntityType(typeof(E));
-      if (mapping == null) { throw new InvalidOperationException(""); }
 
-      var tableName = mapping.GetTableName();
-      var schema = mapping.GetSchema();
+      var tableName = mapping?.GetTableName();
+      var schema = mapping?.GetSchema();
 
-      if (tableName == null) { throw new InvalidOperationException(""); }
-
-      return schema != null ? $"{schema}.{tableName}" : $"{tableName}";
+      return new RelationalTableInfo(tableName, schema);
     }
 
     ///<inheritdoc/>

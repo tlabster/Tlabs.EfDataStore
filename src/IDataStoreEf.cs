@@ -7,6 +7,8 @@ using System.Threading.Tasks;
 
 using Microsoft.EntityFrameworkCore;
 
+using Tlabs.Data.Model;
+
 namespace Tlabs.Data.Store {
 
   ///<summary>Wrapper to convert a <see cref="EfDataStore{T}"/> into a <see cref="IDataStore"/> implementaion.</summary>
@@ -121,7 +123,7 @@ namespace Tlabs.Data.Store {
       => efStore.ThenLoadRelated<E, Prev, Prop>(query, navProperty);
 
     ///<inheritdoc/>
-    public string GetTableName<E>() => efStore.GetTableName<E>();
+    public RelationalTableInfo GetTableName<E>() => efStore.GetTableName<E>();
 
     ///<inheritdoc/>
     public string GetColumnName<E>(string propName) => efStore.GetColumnName<E>(propName);
