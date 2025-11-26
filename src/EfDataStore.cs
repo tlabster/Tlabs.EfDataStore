@@ -14,10 +14,7 @@ using Microsoft.Extensions.Logging;
 using Tlabs.Data.Store.Intern;
 using System.Threading;
 using System.Threading.Tasks;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
-using Microsoft.EntityFrameworkCore.Storage.ValueConversion.Internal;
 using Tlabs.Data.Model;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Tlabs.Data.Store {
 
