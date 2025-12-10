@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 
 using Microsoft.EntityFrameworkCore;
 
-using Tlabs.Data.Filter;
 using Tlabs.Data.Repo.Intern;
 
 namespace Tlabs.Data.Filter {
@@ -83,7 +82,7 @@ namespace Tlabs.Data.Filter {
     }
 
 
-    private async Task<int?> GetTotalCountAsync(IQueryable<TEntity> query, TFilterCriteria? filter, CancellationToken token) {
+    private static async Task<int?> GetTotalCountAsync(IQueryable<TEntity> query, TFilterCriteria? filter, CancellationToken token) {
       var hasFilter = HasFilterCriteria(filter);
 
       // If no filter is applied, count without limit (should be fast)
@@ -100,12 +99,14 @@ namespace Tlabs.Data.Filter {
       return count;
     }
 
-    private bool HasFilterCriteria(TFilterCriteria? filter) {
+    private static bool HasFilterCriteria(TFilterCriteria? filter) {
       if (filter == null)
         return false;
 
-      var expression = filterBuilder.BuildExpression(filter);
-      return expression != null;
+      var type = filter.GetType();
+      return type.GetProperties()
+              .Where(p => p.DeclaringType == type)
+              .Any(p => p.GetValue(filter) != null);
     }
   }
 }
