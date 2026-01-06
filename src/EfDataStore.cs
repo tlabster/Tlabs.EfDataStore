@@ -280,6 +280,26 @@ namespace Tlabs.Data.Store {
     }
 
     ///<inheritdoc/>
+    public async Task<E?> FirstOrDefaultAsync<E>(IQueryable<E> query, Expression<Func<E, bool>> predicate, CancellationToken token) where E : class {
+      return await query.FirstOrDefaultAsync(predicate, token);
+    }
+
+    ///<inheritdoc/>
+    public async Task<E?> SingleOrDefaultAsync<E>(IQueryable<E> query, Expression<Func<E, bool>> predicate, CancellationToken token) where E : class {
+      return await query.SingleOrDefaultAsync(predicate, token);
+    }
+
+    ///<inheritdoc/>
+    public async Task<List<E>> ToListAsync<E>(IQueryable<E> query, CancellationToken cancellationToken = default) where E : class? {
+      return await query.ToListAsync(cancellationToken);
+    }
+
+    ///<inheritdoc/>
+    public IQueryable<E> IgnoreQueryFilters<E>(IQueryable<E> query) where E : class {
+      return query.IgnoreQueryFilters();
+    }
+
+    ///<inheritdoc/>
     public void Dispose() {
       if (AutoCommit) {
         log.LogDebug($"{nameof(EfDataStore<T>)} auto committing changes on disposed.");

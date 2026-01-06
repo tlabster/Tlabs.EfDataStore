@@ -140,5 +140,25 @@ namespace Tlabs.Data.Store {
       efStore.Dispose();
       GC.SuppressFinalize(this);
     }
+
+    ///<inheritdoc/>
+    public Task<E?> FirstOrDefaultAsync<E>(IQueryable<E> query, Expression<Func<E, bool>> predicate, CancellationToken token) where E : class {
+      throw new NotImplementedException();
+    }
+
+    ///<inheritdoc/>
+    public Task<E?> SingleOrDefaultAsync<E>(IQueryable<E> query, Expression<Func<E, bool>> predicate, CancellationToken token) where E : class {
+      throw new NotImplementedException();
+    }
+
+    ///<inheritdoc/>
+    public Task<List<E>> ToListAsync<E>(IQueryable<E> query, CancellationToken cancellationToken = default) where E : class? {
+      throw new NotImplementedException();
+    }
+
+    ///<inheritdoc/>
+    public IQueryable<E> IgnoreQueryFilters<E>(IQueryable<E> query) where E : class {
+      throw new NotImplementedException();
+    }
   }
 }
