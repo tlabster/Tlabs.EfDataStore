@@ -79,7 +79,7 @@ namespace Tlabs.Data.Store {
     }
 
     ///<inheritdoc/>
-    public TEntity Merge<TEntity>(TEntity entity) where TEntity : class, new() => efStore.Merge<TEntity>(entity);
+    public TEntity Merge<TEntity>(TEntity entity) where TEntity : class => efStore.Merge<TEntity>(entity);
 
     ///<inheritdoc/>
     public TEntity Update<TEntity>(TEntity entity) where TEntity : class => efStore.Update<TEntity>(entity);
