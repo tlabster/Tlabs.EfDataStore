@@ -159,7 +159,7 @@ namespace Tlabs.Data.Store {
     }
 
     ///<inheritdoc/>
-    public TEntity Merge<TEntity>(TEntity entity) where TEntity : class, new() {
+    public TEntity Merge<TEntity>(TEntity entity) where TEntity : class {
       TEntity persEnt = Get<TEntity>(GetIdentifier(entity));
       if (null == persEnt) {
         Insert<TEntity>(entity);
